@@ -60,4 +60,6 @@ Do not use "workout" in code or the database; it is ambiguous.
 ## Current milestone
 
 See "Milestones" in `docs/SCOPE.md`. Update this line when a milestone is done.
-Currently: **M0 – skeleton deployed and opening on the phone.**
+M0 done — skeleton and password gate confirmed working on the phone (local dev server
+over LAN; not yet deployed to Vercel).
+Currently: **M1 – Read plan.**
