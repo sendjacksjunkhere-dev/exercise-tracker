@@ -1,6 +1,6 @@
-import { eq, sql } from "drizzle-orm";
+import { desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { exercises, sessionExercises, sessions } from "@/db/schema";
+import { exercises, sessionExercises, sessions, sets } from "@/db/schema";
 import { getPlan } from "./plan";
 
 export function generateSessionId(date: Date, planDay: string): string {
@@ -61,4 +61,25 @@ export async function startSession(planDay: string): Promise<string> {
 
 export async function finishSession(sessionId: string): Promise<void> {
   await db.update(sessions).set({ finishedAt: new Date() }).where(eq(sessions.id, sessionId));
+}
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  await db.delete(sets).where(eq(sets.sessionId, sessionId));
+  await db.delete(sessionExercises).where(eq(sessionExercises.sessionId, sessionId));
+  await db.delete(sessions).where(eq(sessions.id, sessionId));
+}
+
+export async function getUnfinishedSession(): Promise<{
+  id: string;
+  planDay: string;
+  startedAt: Date;
+} | null> {
+  const [row] = await db
+    .select({ id: sessions.id, planDay: sessions.planDay, startedAt: sessions.startedAt })
+    .from(sessions)
+    .where(isNull(sessions.finishedAt))
+    .orderBy(desc(sessions.startedAt))
+    .limit(1);
+
+  return row ?? null;
 }

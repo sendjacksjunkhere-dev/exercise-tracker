@@ -10,7 +10,10 @@ sweaty hands: large tap targets (min 44px), minimal typing, big numbers.
 
 1. **Login** – single password field. Exists (M0).
 2. **Today** – day picker (Mon–Sun, defaults to today's weekday) and that day's
-   exercises from the Plan. Exists (M1). M2 adds a "Start session" button.
+   exercises from the Plan. Exists (M1). M2 adds a "Start session" button. If an
+   unfinished session exists (started but not saved or discarded), a **Resume session**
+   banner appears at the top, above the day picker, regardless of which day is
+   selected — linking to that session, with a Discard option beside it.
 3. **Session** – the main screen. Specified in detail below.
 4. **History** – list of past sessions (date, plan day, sets done). Tapping one shows
    its sets grouped by exercise. Plain list is fine for v1.
@@ -33,8 +36,8 @@ Fixed vertical layout. Only the exercise list scrolls; everything else stays put
 
 ### Header
 - Left: plan day name ("Tuesday session"), exercise count.
-- Right: **Finish** button. Ends the session and triggers the push to the sheet Log
-  tab (M3). Confirm if any exercise has 0 sets logged.
+- Right: **Finish** button. Navigates to the session summary screen (below) — doesn't
+  itself end the session.
 
 ### Current exercise card
 - Exercise name (large) and "Set N of T" where N = next set number, T = target sets
@@ -72,6 +75,23 @@ Fixed vertical layout. Only the exercise list scrolls; everything else stays put
 ### Progress bar
 - "X of Y sets · Z%" where Y = sum of target sets across all exercises in the session
   (after any stepper adjustments) and X = total sets logged.
+
+## Finish flow (summary screen)
+
+Tapping **Finish** on the session screen navigates to a summary screen for that
+session — it does not end the session by itself. The summary shows the same
+grouped-by-exercise set list as the History detail view, plus a warning line naming any
+exercise with 0 sets logged (informational, not a blocking confirm), and three actions:
+
+- **Save session** – marks the session finished and returns to Today. This is the only
+  action that ends the session and triggers the push to the sheet Log tab (M3).
+- **Back to workout** – returns to the live session screen, unchanged (not finished,
+  nothing deleted).
+- **Discard session** – confirmation dialog, then deletes the session and all its
+  logged sets, and returns to Today.
+
+Revisiting a session that's already been saved (via its session URL or the Finish
+screen) redirects to its History detail instead, since there's nothing left to decide.
 
 ## Data implications (for the schema)
 

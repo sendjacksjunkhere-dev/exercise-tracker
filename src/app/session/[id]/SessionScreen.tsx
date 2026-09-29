@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { formatLastTime, type LastTime } from "@/lib/lastTime";
 import {
   deleteSetAction,
-  finishSessionAction,
   logSetAction,
   updateSetAction,
   updateTargetSetsAction,
@@ -76,8 +76,8 @@ export function SessionScreen({
   });
   const [editingSetId, setEditingSetId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<Pending>({ reps: 0, weightKg: 0 });
-  const [isFinishing, setIsFinishing] = useState(false);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+  const logSetGuardRef = useRef(false);
 
   const currentExercise = exerciseList.find((e) => e.exerciseId === currentExerciseId);
   const currentPending = currentExercise ? pendingByExercise[currentExercise.exerciseId] : undefined;
@@ -106,10 +106,17 @@ export function SessionScreen({
   }
 
   function handleLogSet(exercise: ExerciseVM) {
+    if (logSetGuardRef.current) return;
+    logSetGuardRef.current = true;
+
     const pending = pendingByExercise[exercise.exerciseId];
     startTransition(async () => {
-      const newSet = await logSetAction(sessionId, exercise.exerciseId, pending.reps, pending.weightKg);
-      updateExercise(exercise.exerciseId, (e) => ({ ...e, loggedSets: [...e.loggedSets, newSet] }));
+      try {
+        const newSet = await logSetAction(sessionId, exercise.exerciseId, pending.reps, pending.weightKg);
+        updateExercise(exercise.exerciseId, (e) => ({ ...e, loggedSets: [...e.loggedSets, newSet] }));
+      } finally {
+        logSetGuardRef.current = false;
+      }
     });
   }
 
@@ -151,19 +158,6 @@ export function SessionScreen({
     });
   }
 
-  function handleFinish() {
-    const hasEmptyExercise = exerciseList.some((e) => e.loggedSets.length === 0);
-    if (hasEmptyExercise) {
-      const proceed = window.confirm("Some exercises have no sets logged. Finish anyway?");
-      if (!proceed) return;
-    }
-
-    setIsFinishing(true);
-    startTransition(async () => {
-      await finishSessionAction(sessionId);
-    });
-  }
-
   if (!currentExercise || !currentPending) {
     return <div className="p-6">No exercises in this session.</div>;
   }
@@ -177,14 +171,12 @@ export function SessionScreen({
             {exerciseList.length} exercises
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleFinish}
-          disabled={isFinishing}
-          className="h-11 rounded-lg bg-black px-4 font-medium text-white disabled:opacity-40 dark:bg-white dark:text-black"
+        <Link
+          href={`/session/${sessionId}/finish`}
+          className="flex h-11 items-center justify-center rounded-lg bg-black px-4 font-medium text-white dark:bg-white dark:text-black"
         >
-          {isFinishing ? "Finishing…" : "Finish"}
-        </button>
+          Finish
+        </Link>
       </header>
 
       <section className="border-b border-zinc-200 p-4 dark:border-zinc-800">
@@ -287,10 +279,16 @@ export function SessionScreen({
         <button
           type="button"
           onClick={() => handleLogSet(currentExercise)}
-          disabled={currentExercise.loggedSets.length >= currentExercise.targetSets}
-          className="mt-4 h-14 w-full rounded-lg bg-black text-lg font-medium text-white disabled:opacity-40 dark:bg-white dark:text-black"
+          disabled={currentExercise.loggedSets.length >= currentExercise.targetSets || isPending}
+          className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-black text-lg font-medium text-white disabled:opacity-40 dark:bg-white dark:text-black"
         >
-          Log set
+          {isPending && (
+            <span
+              aria-hidden
+              className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
+            />
+          )}
+          {isPending ? "Logging…" : "Log set"}
         </button>
 
         {currentExercise.loggedSets.length > 0 && (

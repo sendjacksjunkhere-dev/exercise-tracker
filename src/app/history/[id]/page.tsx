@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { exercises, sessionExercises, sessions, sets } from "@/db/schema";
+import { SessionExerciseSummary } from "@/components/SessionExerciseSummary";
 
 export default async function HistoryDetailPage(props: PageProps<"/history/[id]">) {
   const { id } = await props.params;
@@ -46,29 +47,7 @@ export default async function HistoryDetailPage(props: PageProps<"/history/[id]"
         {session.finishedAt ? "Finished" : "In progress"}
       </p>
 
-      <ul className="mt-4 flex flex-col gap-4">
-        {sessionExerciseRows.map((exercise) => {
-          const exerciseSets = setRows.filter((s) => s.exerciseId === exercise.exerciseId);
-          return (
-            <li key={exercise.exerciseId} className="rounded-lg bg-white p-4 shadow-sm dark:bg-zinc-900">
-              <p className="text-lg font-semibold text-black dark:text-zinc-50">
-                {exercise.exerciseName}
-              </p>
-              {exerciseSets.length === 0 ? (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">No sets logged</p>
-              ) : (
-                <ul className="mt-1 flex flex-col gap-1">
-                  {exerciseSets.map((set) => (
-                    <li key={set.setNumber} className="text-zinc-700 dark:text-zinc-300">
-                      Set {set.setNumber}: {set.weightKg} kg × {set.reps}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <SessionExerciseSummary exercises={sessionExerciseRows} sets={setRows} />
     </div>
   );
 }

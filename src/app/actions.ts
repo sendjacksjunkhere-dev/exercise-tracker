@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { startSession as createSession } from "@/lib/session";
+import { deleteSession, startSession as createSession } from "@/lib/session";
 
 export async function startSession(formData: FormData) {
   const day = formData.get("day");
@@ -11,4 +11,9 @@ export async function startSession(formData: FormData) {
 
   const sessionId = await createSession(day);
   redirect(`/session/${sessionId}`);
+}
+
+export async function discardSessionAction(sessionId: string) {
+  await deleteSession(sessionId);
+  redirect("/");
 }

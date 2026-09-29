@@ -25,7 +25,7 @@ export async function updateTargetSetsAction(sessionExerciseId: number, newTarge
   return setsLib.updateTargetSets(sessionExerciseId, newTarget);
 }
 
-export async function finishSessionAction(sessionId: string) {
+export async function saveSessionAction(sessionId: string) {
   await finishSession(sessionId);
-  redirect(`/history/${sessionId}`);
+  redirect("/");
 }
