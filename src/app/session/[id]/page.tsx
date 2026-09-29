@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { exercises, sessionExercises, sessions } from "@/db/schema";
+import { exercises, sessionExercises, sessions, sets } from "@/db/schema";
+import { SessionScreen } from "./SessionScreen";
 
 export default async function SessionPage(props: PageProps<"/session/[id]">) {
   const { id } = await props.params;
@@ -15,8 +16,10 @@ export default async function SessionPage(props: PageProps<"/session/[id]">) {
     );
   }
 
-  const rows = await db
+  const sessionExerciseRows = await db
     .select({
+      sessionExerciseId: sessionExercises.id,
+      exerciseId: sessionExercises.exerciseId,
       order: sessionExercises.order,
       targetSets: sessionExercises.targetSets,
       targetReps: sessionExercises.targetReps,
@@ -27,19 +30,30 @@ export default async function SessionPage(props: PageProps<"/session/[id]">) {
     .where(eq(sessionExercises.sessionId, id))
     .orderBy(sessionExercises.order);
 
+  const setRows = await db
+    .select({
+      id: sets.id,
+      exerciseId: sets.exerciseId,
+      setNumber: sets.setNumber,
+      reps: sets.reps,
+      weightKg: sets.weightKg,
+    })
+    .from(sets)
+    .where(eq(sets.sessionId, id))
+    .orderBy(sets.setNumber);
+
+  const initialExercises = sessionExerciseRows.map((row) => ({
+    ...row,
+    loggedSets: setRows
+      .filter((s) => s.exerciseId === row.exerciseId)
+      .map((s) => ({ id: s.id, setNumber: s.setNumber, reps: s.reps, weightKg: s.weightKg })),
+  }));
+
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold">
-        {session.planDay} session — {session.id}
-      </h1>
-      <p className="text-sm text-zinc-500">Started {session.startedAt.toString()}</p>
-      <ul className="mt-4 flex flex-col gap-2">
-        {rows.map((row) => (
-          <li key={row.order}>
-            {row.order}. {row.exerciseName} — {row.targetSets} × {row.targetReps}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <SessionScreen
+      sessionId={session.id}
+      planDay={session.planDay}
+      initialExercises={initialExercises}
+    />
   );
 }
