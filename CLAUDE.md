@@ -62,4 +62,6 @@ Do not use "workout" in code or the database; it is ambiguous.
 See "Milestones" in `docs/SCOPE.md`. Update this line when a milestone is done.
 M0 done — skeleton and password gate confirmed working on the phone (local dev server
 over LAN; not yet deployed to Vercel).
-Currently: **M1 – Read plan.**
+M1 done — Sheets service account wired, today's exercises from `Plan` confirmed working
+on the phone.
+Currently: **M2 – Log sets.**

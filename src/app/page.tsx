@@ -15,7 +15,8 @@ export default async function Home(props: PageProps<"/">) {
   let error: string | null = null;
   try {
     plan = await getPlan();
-  } catch {
+  } catch (err) {
+    console.error("Failed to load plan:", err);
     error = "Couldn't load the plan from Google Sheets. Try again shortly.";
   }
 
