@@ -1,7 +1,11 @@
+import { formatSydneyTime } from "./timezone";
+
 export type LogRowInput = {
   sessionId: string;
   date: string;
   planDay: string;
+  startedAt: Date;
+  lastLoggedAt: Date;
   exerciseOrder: number;
   exerciseName: string;
   setNumber: number;
@@ -9,6 +13,10 @@ export type LogRowInput = {
   weightKg: number;
   notes: string | null;
 };
+
+export function durationMinutes(start: Date, end: Date): number {
+  return Math.round((end.getTime() - start.getTime()) / 60000);
+}
 
 export function formatLogRows(inputs: LogRowInput[]): string[][] {
   return inputs
@@ -18,6 +26,8 @@ export function formatLogRows(inputs: LogRowInput[]): string[][] {
       row.sessionId,
       row.date,
       row.planDay,
+      formatSydneyTime(row.startedAt),
+      String(durationMinutes(row.startedAt, row.lastLoggedAt)),
       row.exerciseName,
       String(row.setNumber),
       String(row.reps),

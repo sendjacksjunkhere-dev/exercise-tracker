@@ -53,18 +53,23 @@ Tab names are exact; the app finds them by name. Template: `exercise-tracker-she
 |-----|-------|----------|------|------|-------|-----------|
 | Monday | 1 | Bench press | 3 | 8 | Pause at chest | |
 
-**Log** (app appends; one row per set; weights in kg)
+**Log** (app appends; one row per set; weights in kg; dates/times in Australia/Sydney time;
+Start time and Duration are per-session and repeat on every row of that session's block)
 
-| Session ID | Date | Day | Exercise | Set # | Reps | Weight (kg) | Notes |
-|------------|------|-----|----------|-------|------|-------------|-------|
-| 2026-09-28-monday-a1b2 | 2026-09-28 | Monday | Bench press | 1 | 8 | 60 | |
+| Session ID | Date | Day | Start time | Duration (min) | Exercise | Set # | Reps | Weight (kg) | Notes |
+|------------|------|-----|------------|-----------------|----------|-------|------|-------------|-------|
+| 2026-09-28-monday-a1b2 | 2026-09-28 | Monday | 18:02 | 43 | Bench press | 1 | 8 | 60 | |
+
+Duration is minutes from the session's `started_at` to its last logged set (not to when
+Finish/Save is pressed, so lingering on the summary screen doesn't inflate it).
 
 ## Data model (app database)
 
 - `exercises` – id, name (unique, case-insensitive), created from Plan rows on first sight.
 - `sessions` – id (the Session ID), date, plan_day, started_at, finished_at,
   pushed_to_sheet_at (null until the Log push succeeds).
-- `sets` – id, session_id, exercise_id, set_number, reps, weight_kg, notes.
+- `sets` – id, session_id, exercise_id, set_number, reps, weight_kg, notes, logged_at
+  (used to compute the Log push's Duration column).
 
 The plan itself is not stored; it is fetched from the sheet and cached briefly (e.g. 5 min).
 

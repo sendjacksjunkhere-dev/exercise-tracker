@@ -53,4 +53,5 @@ export const sets = pgTable("sets", {
   reps: integer("reps").notNull(),
   weightKg: real("weight_kg").notNull(),
   notes: text("notes"),
+  loggedAt: timestamp("logged_at", { withTimezone: true }).defaultNow().notNull(),
 });

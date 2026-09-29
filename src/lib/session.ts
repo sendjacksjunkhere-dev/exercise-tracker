@@ -2,9 +2,10 @@ import { desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { exercises, sessionExercises, sessions, sets } from "@/db/schema";
 import { getPlan } from "./plan";
+import { formatSydneyDate } from "./timezone";
 
 export function generateSessionId(date: Date, planDay: string): string {
-  const dateStr = date.toISOString().slice(0, 10);
+  const dateStr = formatSydneyDate(date);
   const daySlug = planDay.toLowerCase();
   const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 4);
   return `${dateStr}-${daySlug}-${suffix}`;

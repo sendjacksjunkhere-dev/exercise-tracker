@@ -19,6 +19,7 @@ async function getLogRowInputs(sessionId: string): Promise<LogRowInput[]> {
       reps: sets.reps,
       weightKg: sets.weightKg,
       notes: sets.notes,
+      loggedAt: sets.loggedAt,
     })
     .from(sets)
     .innerJoin(
@@ -31,11 +32,23 @@ async function getLogRowInputs(sessionId: string): Promise<LogRowInput[]> {
     .innerJoin(exercises, eq(sets.exerciseId, exercises.id))
     .where(eq(sets.sessionId, sessionId));
 
+  const lastLoggedAt = rows.reduce(
+    (latest, row) => (row.loggedAt > latest ? row.loggedAt : latest),
+    session.startedAt
+  );
+
   return rows.map((row) => ({
     sessionId: session.id,
     date: session.date,
     planDay: session.planDay,
-    ...row,
+    startedAt: session.startedAt,
+    lastLoggedAt,
+    exerciseOrder: row.exerciseOrder,
+    exerciseName: row.exerciseName,
+    setNumber: row.setNumber,
+    reps: row.reps,
+    weightKg: row.weightKg,
+    notes: row.notes,
   }));
 }
 
