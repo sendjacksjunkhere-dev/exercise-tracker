@@ -67,4 +67,7 @@ M1 done — Sheets service account wired, today's exercises from `Plan` confirme
 on the phone.
 M2 done — Neon DB, start/log/finish/discard a session, "last time" lookup, Resume
 banner, and History browsing all confirmed working on the phone.
-Currently: **M3 – Push to sheet.**
+M3 done — Save session pushes to the `Log` tab (Session ID, Date, Day, Start time,
+Duration, Exercise, Set #, Reps, Weight, Notes), all in Australia/Sydney time, guarded
+against duplicates, retried on load if a push failed. Confirmed working on the phone.
+Currently: **M4 – Phone polish.**
