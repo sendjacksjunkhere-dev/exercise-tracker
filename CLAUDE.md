@@ -64,4 +64,6 @@ M0 done — skeleton and password gate confirmed working on the phone (local dev
 over LAN; not yet deployed to Vercel).
 M1 done — Sheets service account wired, today's exercises from `Plan` confirmed working
 on the phone.
-Currently: **M2 – Log sets.**
+M2 done — Neon DB, start/log/finish/discard a session, "last time" lookup, Resume
+banner, and History browsing all confirmed working on the phone.
+Currently: **M3 – Push to sheet.**
