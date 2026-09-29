@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { formatLastTime, type LastTime } from "@/lib/lastTime";
 import {
   deleteSetAction,
   logSetAction,
@@ -23,6 +24,7 @@ type ExerciseVM = {
   targetSets: number;
   targetReps: number;
   loggedSets: LoggedSet[];
+  lastTime: LastTime | null;
 };
 
 type Pending = { reps: number; weightKg: number };
@@ -31,9 +33,16 @@ const DEFAULT_WEIGHT_KG = 20;
 
 function initialPending(exercise: ExerciseVM): Pending {
   const last = exercise.loggedSets[exercise.loggedSets.length - 1];
-  return last
-    ? { reps: last.reps, weightKg: last.weightKg }
-    : { reps: exercise.targetReps, weightKg: DEFAULT_WEIGHT_KG };
+  if (last) {
+    return { reps: last.reps, weightKg: last.weightKg };
+  }
+
+  const lastTimeFirstSet = exercise.lastTime?.sets[0];
+  if (lastTimeFirstSet) {
+    return { reps: lastTimeFirstSet.reps, weightKg: lastTimeFirstSet.weightKg };
+  }
+
+  return { reps: exercise.targetReps, weightKg: DEFAULT_WEIGHT_KG };
 }
 
 function stateFor(exercise: ExerciseVM, currentExerciseId: number): "done" | "current" | "started" | "empty" {
@@ -192,6 +201,12 @@ export function SessionScreen({
             </button>
           </div>
         </div>
+
+        {currentExercise.lastTime && (
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            Last time: {formatLastTime(currentExercise.lastTime)} · {currentExercise.lastTime.date}
+          </p>
+        )}
 
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div>

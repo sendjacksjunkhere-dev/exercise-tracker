@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { exercises, sessionExercises, sessions, sets } from "@/db/schema";
+import { getLastTime } from "@/lib/lastTimeQuery";
 import { SessionScreen } from "./SessionScreen";
 
 export default async function SessionPage(props: PageProps<"/session/[id]">) {
@@ -42,12 +43,15 @@ export default async function SessionPage(props: PageProps<"/session/[id]">) {
     .where(eq(sets.sessionId, id))
     .orderBy(sets.setNumber);
 
-  const initialExercises = sessionExerciseRows.map((row) => ({
-    ...row,
-    loggedSets: setRows
-      .filter((s) => s.exerciseId === row.exerciseId)
-      .map((s) => ({ id: s.id, setNumber: s.setNumber, reps: s.reps, weightKg: s.weightKg })),
-  }));
+  const initialExercises = await Promise.all(
+    sessionExerciseRows.map(async (row) => ({
+      ...row,
+      loggedSets: setRows
+        .filter((s) => s.exerciseId === row.exerciseId)
+        .map((s) => ({ id: s.id, setNumber: s.setNumber, reps: s.reps, weightKg: s.weightKg })),
+      lastTime: await getLastTime(row.exerciseId, id),
+    }))
+  );
 
   return (
     <SessionScreen
