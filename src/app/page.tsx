@@ -1,5 +1,6 @@
 import { getPlan } from "@/lib/plan";
 import { WEEKDAYS } from "@/lib/planParser";
+import { startSession } from "./actions";
 
 export default async function Home(props: PageProps<"/">) {
   const searchParams = await props.searchParams;
@@ -74,6 +75,18 @@ export default async function Home(props: PageProps<"/">) {
               </li>
             ))}
           </ul>
+        )}
+
+        {!error && planDay && (
+          <form action={startSession} className="mt-6">
+            <input type="hidden" name="day" value={selectedDay} />
+            <button
+              type="submit"
+              className="h-14 w-full rounded-lg bg-black text-lg font-medium text-white dark:bg-white dark:text-black"
+            >
+              Start session
+            </button>
+          </form>
         )}
       </main>
     </div>
