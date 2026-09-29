@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { exercises, sessionExercises, sessions } from "@/db/schema";
 import { getPlan } from "./plan";
@@ -57,4 +57,8 @@ export async function startSession(planDay: string): Promise<string> {
   }
 
   return sessionId;
+}
+
+export async function finishSession(sessionId: string): Promise<void> {
+  await db.update(sessions).set({ finishedAt: new Date() }).where(eq(sessions.id, sessionId));
 }

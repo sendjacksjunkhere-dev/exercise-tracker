@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { formatLastTime, type LastTime } from "@/lib/lastTime";
 import {
   deleteSetAction,
+  finishSessionAction,
   logSetAction,
   updateSetAction,
   updateTargetSetsAction,
@@ -75,6 +76,7 @@ export function SessionScreen({
   });
   const [editingSetId, setEditingSetId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<Pending>({ reps: 0, weightKg: 0 });
+  const [isFinishing, setIsFinishing] = useState(false);
   const [, startTransition] = useTransition();
 
   const currentExercise = exerciseList.find((e) => e.exerciseId === currentExerciseId);
@@ -149,6 +151,19 @@ export function SessionScreen({
     });
   }
 
+  function handleFinish() {
+    const hasEmptyExercise = exerciseList.some((e) => e.loggedSets.length === 0);
+    if (hasEmptyExercise) {
+      const proceed = window.confirm("Some exercises have no sets logged. Finish anyway?");
+      if (!proceed) return;
+    }
+
+    setIsFinishing(true);
+    startTransition(async () => {
+      await finishSessionAction(sessionId);
+    });
+  }
+
   if (!currentExercise || !currentPending) {
     return <div className="p-6">No exercises in this session.</div>;
   }
@@ -164,10 +179,11 @@ export function SessionScreen({
         </div>
         <button
           type="button"
-          disabled
-          className="h-11 rounded-lg bg-zinc-300 px-4 font-medium text-zinc-500 dark:bg-zinc-800"
+          onClick={handleFinish}
+          disabled={isFinishing}
+          className="h-11 rounded-lg bg-black px-4 font-medium text-white disabled:opacity-40 dark:bg-white dark:text-black"
         >
-          Finish
+          {isFinishing ? "Finishing…" : "Finish"}
         </button>
       </header>
 

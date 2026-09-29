@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
 import { db } from "@/db/client";
 import { exercises, sessionExercises, sessions, sets } from "@/db/schema";
 import { getLastTime } from "@/lib/lastTimeQuery";
@@ -15,6 +16,10 @@ export default async function SessionPage(props: PageProps<"/session/[id]">) {
         <p>No session found for id {id}.</p>
       </div>
     );
+  }
+
+  if (session.finishedAt) {
+    redirect(`/history/${id}`);
   }
 
   const sessionExerciseRows = await db

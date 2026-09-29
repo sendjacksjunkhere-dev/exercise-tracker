@@ -1,6 +1,8 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import * as setsLib from "@/lib/sets";
+import { finishSession } from "@/lib/session";
 
 export async function logSetAction(
   sessionId: string,
@@ -21,4 +23,9 @@ export async function deleteSetAction(setId: number) {
 
 export async function updateTargetSetsAction(sessionExerciseId: number, newTarget: number) {
   return setsLib.updateTargetSets(sessionExerciseId, newTarget);
+}
+
+export async function finishSessionAction(sessionId: string) {
+  await finishSession(sessionId);
+  redirect(`/history/${sessionId}`);
 }

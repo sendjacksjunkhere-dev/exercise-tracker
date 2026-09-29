@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { getPlan } from "@/lib/plan";
 import { WEEKDAYS } from "@/lib/planParser";
 import { startSession } from "./actions";
+import { StartSessionButton } from "./StartSessionButton";
 
 export default async function Home(props: PageProps<"/">) {
   const searchParams = await props.searchParams;
@@ -25,9 +27,17 @@ export default async function Home(props: PageProps<"/">) {
 
   return (
     <div className="flex min-h-dvh flex-col items-center gap-6 bg-zinc-50 px-6 py-10 dark:bg-black">
-      <h1 className="text-3xl font-semibold text-black dark:text-zinc-50">
-        Exercise Tracker
-      </h1>
+      <div className="flex w-full max-w-md items-center justify-between">
+        <h1 className="text-3xl font-semibold text-black dark:text-zinc-50">
+          Exercise Tracker
+        </h1>
+        <Link
+          href="/history"
+          className="text-sm font-medium text-zinc-600 underline dark:text-zinc-400"
+        >
+          History
+        </Link>
+      </div>
 
       <nav className="flex w-full max-w-md flex-wrap justify-center gap-2">
         {WEEKDAYS.map((day) => (
@@ -80,12 +90,7 @@ export default async function Home(props: PageProps<"/">) {
         {!error && planDay && (
           <form action={startSession} className="mt-6">
             <input type="hidden" name="day" value={selectedDay} />
-            <button
-              type="submit"
-              className="h-14 w-full rounded-lg bg-black text-lg font-medium text-white dark:bg-white dark:text-black"
-            >
-              Start session
-            </button>
+            <StartSessionButton />
           </form>
         )}
       </main>
