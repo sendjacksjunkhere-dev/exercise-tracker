@@ -24,7 +24,8 @@ Do not use "workout" in code or the database; it is ambiguous.
 2. The app's database is the source of truth for Sessions and Sets. Logging a set writes to
    the DB only; it must work with poor connectivity.
 3. On "Finish session" the app appends all Sets of that Session to the Sheet `Log` tab in a
-   single batch. The app never reads `Log`.
+   single batch. `Log` is never a data source for anything the app displays (History reads
+   from the DB) — the only read of `Log` is the duplicate-guard check in rule 4.
 4. Every Session has a unique `sessionId`. Before appending to `Log`, check whether rows
    with that `sessionId` already exist; if so, skip. Pushes must be safe to retry.
 5. "Last time" lookups (what did I do last time for this exercise) come from the app DB.

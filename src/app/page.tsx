@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { after } from "next/server";
 import { getPlan } from "@/lib/plan";
 import { WEEKDAYS } from "@/lib/planParser";
 import { getUnfinishedSession } from "@/lib/session";
+import { retryUnsyncedSessions } from "@/lib/pushToSheet";
 import { DiscardSessionButton } from "@/components/DiscardSessionButton";
 import { startSession } from "./actions";
 import { StartSessionButton } from "./StartSessionButton";
@@ -28,6 +30,8 @@ export default async function Home(props: PageProps<"/">) {
 
   const planDay = plan?.find((day) => day.day === selectedDay);
   const unfinishedSession = await getUnfinishedSession();
+
+  after(() => retryUnsyncedSessions());
 
   return (
     <div className="flex min-h-dvh flex-col items-center gap-6 bg-zinc-50 px-6 py-10 dark:bg-black">

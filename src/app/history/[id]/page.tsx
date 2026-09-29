@@ -44,7 +44,11 @@ export default async function HistoryDetailPage(props: PageProps<"/history/[id]"
         {session.planDay} — {session.date}
       </h1>
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        {session.finishedAt ? "Finished" : "In progress"}
+        {session.finishedAt
+          ? session.pushedToSheetAt
+            ? "Finished"
+            : "Finished · not yet synced"
+          : "In progress"}
       </p>
 
       <SessionExerciseSummary exercises={sessionExerciseRows} sets={setRows} />

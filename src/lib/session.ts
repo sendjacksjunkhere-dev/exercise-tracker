@@ -63,6 +63,13 @@ export async function finishSession(sessionId: string): Promise<void> {
   await db.update(sessions).set({ finishedAt: new Date() }).where(eq(sessions.id, sessionId));
 }
 
+export async function markPushedToSheet(sessionId: string): Promise<void> {
+  await db
+    .update(sessions)
+    .set({ pushedToSheetAt: new Date() })
+    .where(eq(sessions.id, sessionId));
+}
+
 export async function deleteSession(sessionId: string): Promise<void> {
   await db.delete(sets).where(eq(sets.sessionId, sessionId));
   await db.delete(sessionExercises).where(eq(sessionExercises.sessionId, sessionId));

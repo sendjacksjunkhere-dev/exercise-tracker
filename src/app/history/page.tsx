@@ -9,11 +9,18 @@ export default async function HistoryPage() {
       date: sessions.date,
       planDay: sessions.planDay,
       finishedAt: sessions.finishedAt,
+      pushedToSheetAt: sessions.pushedToSheetAt,
       setsDone: sql<number>`count(${sets.id})::int`,
     })
     .from(sessions)
     .leftJoin(sets, eq(sets.sessionId, sessions.id))
-    .groupBy(sessions.id, sessions.date, sessions.planDay, sessions.finishedAt)
+    .groupBy(
+      sessions.id,
+      sessions.date,
+      sessions.planDay,
+      sessions.finishedAt,
+      sessions.pushedToSheetAt
+    )
     .orderBy(desc(sessions.startedAt));
 
   return (
@@ -36,7 +43,9 @@ export default async function HistoryPage() {
                   {row.planDay} — {row.date}
                 </p>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {row.setsDone} sets{!row.finishedAt && " · in progress"}
+                  {row.setsDone} sets
+                  {!row.finishedAt && " · in progress"}
+                  {row.finishedAt && !row.pushedToSheetAt && " · not yet synced"}
                 </p>
               </div>
             </a>

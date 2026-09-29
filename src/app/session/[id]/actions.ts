@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import * as setsLib from "@/lib/sets";
 import { finishSession } from "@/lib/session";
+import { pushSessionToSheet } from "@/lib/pushToSheet";
 
 export async function logSetAction(
   sessionId: string,
@@ -27,5 +28,6 @@ export async function updateTargetSetsAction(sessionExerciseId: number, newTarge
 
 export async function saveSessionAction(sessionId: string) {
   await finishSession(sessionId);
+  await pushSessionToSheet(sessionId);
   redirect("/");
 }
