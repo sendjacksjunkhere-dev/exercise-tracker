@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { discardSessionAction } from "@/app/actions";
+import { buttonClass } from "@/lib/ui";
 
 export function DiscardSessionButton({
   sessionId,
@@ -30,10 +31,7 @@ export function DiscardSessionButton({
       type="button"
       onClick={handleClick}
       disabled={isPending}
-      className={
-        className ??
-        "font-medium text-red-700 disabled:opacity-50 dark:text-red-400"
-      }
+      className={className ?? buttonClass("dangerOutline", "sm")}
     >
       {isPending ? "Discarding…" : label}
     </button>

@@ -4,6 +4,7 @@ import { getPlan } from "@/lib/plan";
 import { WEEKDAYS } from "@/lib/planParser";
 import { getUnfinishedSession } from "@/lib/session";
 import { retryUnsyncedSessions } from "@/lib/pushToSheet";
+import { buttonClass, cardClass } from "@/lib/ui";
 import { DiscardSessionButton } from "@/components/DiscardSessionButton";
 import { startSession } from "./actions";
 import { StartSessionButton } from "./StartSessionButton";
@@ -34,24 +35,19 @@ export default async function Home(props: PageProps<"/">) {
   after(() => retryUnsyncedSessions());
 
   return (
-    <div className="flex min-h-dvh flex-col items-center gap-6 bg-zinc-50 px-6 py-10 dark:bg-black">
+    <div className="flex min-h-dvh flex-col items-center gap-6 px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))]">
       <div className="flex w-full max-w-md items-center justify-between">
-        <h1 className="text-3xl font-semibold text-black dark:text-zinc-50">
-          Exercise Tracker
-        </h1>
-        <Link
-          href="/history"
-          className="text-sm font-medium text-zinc-600 underline dark:text-zinc-400"
-        >
+        <h1 className="text-3xl font-semibold text-text">Exercise Tracker</h1>
+        <Link href="/history" className={buttonClass("outline", "sm")}>
           History
         </Link>
       </div>
 
       {unfinishedSession && (
-        <div className="flex w-full max-w-md items-center justify-between gap-3 rounded-lg bg-amber-100 p-4 dark:bg-amber-950">
+        <div className="flex w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-card-current p-4">
           <Link href={`/session/${unfinishedSession.id}`} className="flex-1">
-            <p className="font-medium text-black dark:text-zinc-50">Resume session</p>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="font-medium text-accent">Resume session</p>
+            <p className="text-sm text-text-muted">
               {unfinishedSession.planDay} · started{" "}
               {unfinishedSession.startedAt.toLocaleDateString("en-US", {
                 weekday: "short",
@@ -60,38 +56,33 @@ export default async function Home(props: PageProps<"/">) {
               })}
             </p>
           </Link>
-          <DiscardSessionButton sessionId={unfinishedSession.id} label="Discard" />
+          <DiscardSessionButton
+            sessionId={unfinishedSession.id}
+            label="Discard"
+            className={buttonClass("dangerOutline", "sm")}
+          />
         </div>
       )}
 
       <DayPicker selectedDay={selectedDay} />
 
       <main className="w-full max-w-md">
-        {error && <p className="text-center text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p className="text-center text-red-400">{error}</p>}
 
         {!error && !planDay && (
-          <p className="text-center text-zinc-600 dark:text-zinc-400">
-            No exercises planned for {selectedDay}.
-          </p>
+          <p className="text-center text-text-muted">No exercises planned for {selectedDay}.</p>
         )}
 
         {!error && planDay && (
           <ul className="flex flex-col gap-4">
             {planDay.exercises.map((exercise) => (
-              <li
-                key={exercise.order}
-                className="rounded-lg bg-white p-4 shadow-sm dark:bg-zinc-900"
-              >
-                <p className="text-xl font-semibold text-black dark:text-zinc-50">
-                  {exercise.exercise}
-                </p>
-                <p className="text-lg text-zinc-700 dark:text-zinc-300">
+              <li key={exercise.order} className={cardClass}>
+                <p className="text-xl font-semibold text-text">{exercise.exercise}</p>
+                <p className="text-lg text-text-muted">
                   {exercise.sets} × {exercise.reps}
                 </p>
                 {exercise.notes && (
-                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                    {exercise.notes}
-                  </p>
+                  <p className="mt-1 text-sm text-text-muted">{exercise.notes}</p>
                 )}
               </li>
             ))}

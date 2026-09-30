@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { useFormStatus } from "react-dom";
+import { buttonClass } from "@/lib/ui";
 
 export function StartSessionButton() {
   const { pending } = useFormStatus();
@@ -18,7 +19,7 @@ export function StartSessionButton() {
         }
         submittedRef.current = true;
       }}
-      className="flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-black text-lg font-medium text-white disabled:opacity-60 dark:bg-white dark:text-black"
+      className={buttonClass("primary")}
     >
       {pending && (
         <span

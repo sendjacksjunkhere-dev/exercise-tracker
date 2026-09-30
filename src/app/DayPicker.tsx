@@ -26,9 +26,7 @@ export function DayPicker({ selectedDay }: { selectedDay: string }) {
           onClick={() => handleClick(day)}
           disabled={isPending}
           className={`flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium disabled:opacity-60 ${
-            day === selectedDay
-              ? "bg-black text-white dark:bg-white dark:text-black"
-              : "bg-zinc-200 text-black dark:bg-zinc-800 dark:text-zinc-50"
+            day === selectedDay ? "bg-accent text-text" : "bg-control text-text-muted"
           }`}
         >
           {day}
