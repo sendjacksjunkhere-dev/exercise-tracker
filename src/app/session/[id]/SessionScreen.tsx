@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { formatLastTime, type LastTime } from "@/lib/lastTime";
+import { formatShortDate, type LastTime } from "@/lib/lastTime";
 import {
   deleteSetAction,
   logSetAction,
@@ -32,15 +32,15 @@ type Pending = { reps: number; weightKg: number };
 
 const DEFAULT_WEIGHT_KG = 20;
 
-function initialPending(exercise: ExerciseVM): Pending {
-  const last = exercise.loggedSets[exercise.loggedSets.length - 1];
-  if (last) {
-    return { reps: last.reps, weightKg: last.weightKg };
+function computePending(exercise: ExerciseVM, setNumber: number): Pending {
+  const lastTimeSet = exercise.lastTime?.sets.find((s) => s.setNumber === setNumber);
+  if (lastTimeSet) {
+    return { reps: lastTimeSet.reps, weightKg: lastTimeSet.weightKg };
   }
 
-  const lastTimeFirstSet = exercise.lastTime?.sets[0];
-  if (lastTimeFirstSet) {
-    return { reps: lastTimeFirstSet.reps, weightKg: lastTimeFirstSet.weightKg };
+  const previousSetThisSession = exercise.loggedSets.find((s) => s.setNumber === setNumber - 1);
+  if (previousSetThisSession) {
+    return { reps: previousSetThisSession.reps, weightKg: previousSetThisSession.weightKg };
   }
 
   return { reps: exercise.targetReps, weightKg: DEFAULT_WEIGHT_KG };
@@ -70,7 +70,7 @@ export function SessionScreen({
   const [pendingByExercise, setPendingByExercise] = useState<Record<number, Pending>>(() => {
     const map: Record<number, Pending> = {};
     for (const exercise of initialExercises) {
-      map[exercise.exerciseId] = initialPending(exercise);
+      map[exercise.exerciseId] = computePending(exercise, exercise.loggedSets.length + 1);
     }
     return map;
   });
@@ -113,7 +113,14 @@ export function SessionScreen({
     startTransition(async () => {
       try {
         const newSet = await logSetAction(sessionId, exercise.exerciseId, pending.reps, pending.weightKg);
-        updateExercise(exercise.exerciseId, (e) => ({ ...e, loggedSets: [...e.loggedSets, newSet] }));
+        const updatedLoggedSets = [...exercise.loggedSets, newSet];
+        updateExercise(exercise.exerciseId, (e) => ({ ...e, loggedSets: updatedLoggedSets }));
+
+        const nextPending = computePending(
+          { ...exercise, loggedSets: updatedLoggedSets },
+          updatedLoggedSets.length + 1
+        );
+        setPendingByExercise((map) => ({ ...map, [exercise.exerciseId]: nextPending }));
       } finally {
         logSetGuardRef.current = false;
       }
@@ -211,9 +218,16 @@ export function SessionScreen({
         </div>
 
         {currentExercise.lastTime && (
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            Last time: {formatLastTime(currentExercise.lastTime)} · {currentExercise.lastTime.date}
-          </p>
+          <div className="mt-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+              Last time · {formatShortDate(currentExercise.lastTime.date)}
+            </p>
+            {currentExercise.lastTime.sets.map((set) => (
+              <p key={set.setNumber} className="text-sm text-zinc-500 dark:text-zinc-400">
+                Set {set.setNumber} · {set.weightKg} kg × {set.reps}
+              </p>
+            ))}
+          </div>
         )}
 
         <div className="mt-4 grid grid-cols-2 gap-4">
@@ -353,13 +367,25 @@ export function SessionScreen({
         )}
       </section>
 
+      <div className="flex items-center gap-3 border-b border-zinc-200 px-4 py-1 dark:border-zinc-800">
+        <span className="w-4" aria-hidden />
+        <span className="flex-1" />
+        <span className="text-xs text-zinc-400 dark:text-zinc-500">Sets</span>
+        <span className="w-10 text-right text-xs text-zinc-400 dark:text-zinc-500">Reps</span>
+        <span className="w-16 text-right text-xs text-zinc-400 dark:text-zinc-500">Kg</span>
+      </div>
+
       <div className="flex-1 overflow-y-auto">
         <ul>
           {exerciseList.map((exercise) => {
             const state = stateFor(exercise, currentExerciseId);
             const lastSet = exercise.loggedSets[exercise.loggedSets.length - 1];
             const repsDisplay = lastSet ? lastSet.reps : exercise.targetReps;
-            const weightDisplay = lastSet ? `${lastSet.weightKg} kg` : "—";
+            const weightDisplay = lastSet
+              ? `${lastSet.weightKg} kg`
+              : exercise.lastTime
+                ? `${exercise.lastTime.sets[0].weightKg} kg`
+                : "—";
 
             return (
               <li key={exercise.sessionExerciseId}>

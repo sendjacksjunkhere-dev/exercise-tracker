@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatLastTime, pickLastTime, type LastTimeSetRow } from "./lastTime";
+import { formatLastTime, formatShortDate, pickLastTime, type LastTimeSetRow } from "./lastTime";
 
 function row(overrides: Partial<LastTimeSetRow>): LastTimeSetRow {
   return {
@@ -81,5 +81,16 @@ describe("formatLastTime", () => {
       ],
     });
     expect(result).toBe("60 kg × 8, 62.5 kg × 7");
+  });
+});
+
+describe("formatShortDate", () => {
+  it("formats a date string as weekday, day, short month", () => {
+    expect(formatShortDate("2026-09-29")).toBe("Tue 29 Sep");
+  });
+
+  it("doesn't shift the date regardless of the runner's local timezone", () => {
+    expect(formatShortDate("2026-01-01")).toBe("Thu 1 Jan");
+    expect(formatShortDate("2026-12-31")).toBe("Thu 31 Dec");
   });
 });

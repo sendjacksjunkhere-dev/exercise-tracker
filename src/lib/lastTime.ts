@@ -36,6 +36,28 @@ export function pickLastTime(
   return { date, sets: setsForLatest };
 }
 
+const WEEKDAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_ABBR = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+export function formatShortDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return `${WEEKDAY_ABBR[date.getUTCDay()]} ${day} ${MONTH_ABBR[date.getUTCMonth()]}`;
+}
+
 export function formatLastTime(lastTime: LastTime): string {
   const uniqueWeights = new Set(lastTime.sets.map((set) => set.weightKg));
   const repsList = lastTime.sets.map((set) => set.reps).join(", ");

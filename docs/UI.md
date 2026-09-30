@@ -44,8 +44,9 @@ Fixed vertical layout. Only the exercise list scrolls; everything else stays put
   for this exercise in this session.
 - **Sets stepper** (−/+) top-right, adjusts T for this session only. Never changes
   the Plan. Minimum = sets already logged. Progress bar total recalculates.
-- **Last time** line: most recent session containing this exercise, as
-  "60 kg × 8, 8, 7" plus date. From the app DB. Hidden if none.
+- **Last time** heading: short date ("Tue 29 Sep") of the most recent session containing
+  this exercise, with one line per set beneath it ("Set 1 · 20 kg × 8"). From the app
+  DB. Hidden if none.
 - **Weight stepper**: −/+ in 2.5 kg steps. Tapping the number opens a numeric keypad
   for direct entry. Minimum 0.
 - **Reps stepper**: −/+ in steps of 1. Tapping the number opens a numeric keypad.
@@ -54,17 +55,19 @@ Fixed vertical layout. Only the exercise list scrolls; everything else stays put
   allows edit or delete of that set.
 
 ### Stepper defaults and memory
-- First set of an exercise in a session: prefill from last time's first set if it
-  exists, else from the Plan targets (reps) and 20 kg (weight).
-- Subsequent sets: prefill from the previous set of the **same exercise in this
-  session**. This memory is per exercise, so switching between exercises and back
-  restores each exercise's own last values.
+- For set N of an exercise: prefill from **last time's set N** if it exists, else the
+  **previous set of the same exercise in this session** (set N−1) if one's been logged,
+  else the Plan target reps and 20 kg. Recomputed after every logged set, so switching
+  between exercises and back restores each exercise's own next-set values.
 
 ### Exercise list
+- Small grey column headers above the list: **Sets**, **Reps**, **Kg**.
 - One row per exercise in the plan day, in plan order. Columns: state indicator,
   name, sets done / target, reps, weight.
-- Reps and weight show the Plan targets until the first set is logged, then show the
-  most recently logged values for that exercise.
+- Reps show the Plan target until the first set is logged this session, then the most
+  recently logged value. Weight shows last time's weight for that exercise until the
+  first set is logged this session (a dash if there's no history at all), then the most
+  recently logged value.
 - State indicator: **tick** (done: sets logged ≥ target), **ring** (current),
   **dot** (started, not current), **empty** (not started).
 - Tapping any row makes it the current exercise; the card reloads with that
