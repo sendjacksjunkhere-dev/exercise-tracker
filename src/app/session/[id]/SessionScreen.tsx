@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { formatShortDate, type LastTime } from "@/lib/lastTime";
+import { buttonClass, cardClass } from "@/lib/ui";
 import {
   deleteSetAction,
   logSetAction,
@@ -45,6 +46,12 @@ function computePending(exercise: ExerciseVM, setNumber: number): Pending {
   }
 
   return { reps: exercise.targetReps, weightKg: DEFAULT_WEIGHT_KG };
+}
+
+const LONG_NAME_THRESHOLD = 16;
+
+function exerciseTitleClass(name: string): string {
+  return name.length > LONG_NAME_THRESHOLD ? "text-xl" : "text-3xl";
 }
 
 function stateFor(exercise: ExerciseVM, currentExerciseId: number): ExerciseState {
@@ -214,18 +221,19 @@ export function SessionScreen({
           <p className="text-xl font-semibold text-text">{planDay} session</p>
           <p className="text-sm text-text-muted">{exerciseList.length} exercises</p>
         </div>
-        <Link
-          href={`/session/${sessionId}/finish`}
-          className="flex h-11 items-center justify-center rounded-xl border border-border px-4 font-medium text-text"
-        >
+        <Link href={`/session/${sessionId}/finish`} className={buttonClass("outline", "sm")}>
           Finish
         </Link>
       </header>
 
-      <section className="rounded-2xl bg-card p-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-3xl font-bold text-text">{currentExercise.exerciseName}</p>
+      <section className={cardClass}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p
+              className={`line-clamp-2 font-bold text-text ${exerciseTitleClass(currentExercise.exerciseName)}`}
+            >
+              {currentExercise.exerciseName}
+            </p>
             <p className="text-text-muted">
               Set {nextSetNumber} of {currentExercise.targetSets}
             </p>
@@ -273,7 +281,7 @@ export function SessionScreen({
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div>
             <p className="text-center text-sm text-text-muted">Weight (kg)</p>
-            <div className="mt-1 flex items-center gap-2">
+            <div className="mt-1 flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => adjustPending(currentExercise.exerciseId, "weightKg", -2.5)}
@@ -288,7 +296,7 @@ export function SessionScreen({
                 onChange={(e) =>
                   setPendingField(currentExercise.exerciseId, "weightKg", Number(e.target.value))
                 }
-                className="w-full min-w-0 bg-transparent text-center text-4xl font-bold text-text"
+                className="w-full min-w-0 bg-transparent text-center text-3xl font-bold tabular-nums text-text"
               />
               <button
                 type="button"
@@ -302,7 +310,7 @@ export function SessionScreen({
 
           <div>
             <p className="text-center text-sm text-text-muted">Reps</p>
-            <div className="mt-1 flex items-center gap-2">
+            <div className="mt-1 flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => adjustPending(currentExercise.exerciseId, "reps", -1)}
@@ -317,7 +325,7 @@ export function SessionScreen({
                 onChange={(e) =>
                   setPendingField(currentExercise.exerciseId, "reps", Number(e.target.value))
                 }
-                className="w-full min-w-0 bg-transparent text-center text-4xl font-bold text-text"
+                className="w-full min-w-0 bg-transparent text-center text-3xl font-bold tabular-nums text-text"
               />
               <button
                 type="button"
@@ -334,7 +342,7 @@ export function SessionScreen({
           type="button"
           onClick={() => handleLogSet(currentExercise)}
           disabled={currentExercise.loggedSets.length >= currentExercise.targetSets || isPending}
-          className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-accent text-lg font-semibold text-text disabled:opacity-40"
+          className={`mt-4 ${buttonClass("primary")}`}
         >
           {isPending && (
             <span
