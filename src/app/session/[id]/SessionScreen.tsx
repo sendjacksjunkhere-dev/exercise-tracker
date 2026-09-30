@@ -24,7 +24,7 @@ type ExerciseVM = {
   order: number;
   exerciseName: string;
   targetSets: number;
-  targetReps: number;
+  targetReps: number | null;
   loggedSets: LoggedSet[];
   lastTime: LastTime | null;
 };
@@ -45,7 +45,7 @@ function computePending(exercise: ExerciseVM, setNumber: number): Pending {
     return { reps: previousSetThisSession.reps, weightKg: previousSetThisSession.weightKg };
   }
 
-  return { reps: exercise.targetReps, weightKg: DEFAULT_WEIGHT_KG };
+  return { reps: exercise.targetReps ?? 0, weightKg: DEFAULT_WEIGHT_KG };
 }
 
 const LONG_NAME_THRESHOLD = 16;
@@ -431,7 +431,7 @@ export function SessionScreen({
           {exerciseList.map((exercise) => {
             const state = stateFor(exercise, currentExerciseId);
             const lastSet = exercise.loggedSets[exercise.loggedSets.length - 1];
-            const repsDisplay = lastSet ? lastSet.reps : exercise.targetReps;
+            const repsDisplay = lastSet ? lastSet.reps : (exercise.targetReps ?? "—");
             const weightDisplay = lastSet
               ? lastSet.weightKg
               : exercise.lastTime

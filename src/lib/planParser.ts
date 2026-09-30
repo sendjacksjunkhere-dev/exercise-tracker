@@ -14,7 +14,7 @@ export type PlanExercise = {
   order: number;
   exercise: string;
   sets: number;
-  reps: number;
+  reps: number | null;
   notes?: string;
   videoUrl?: string;
 };
@@ -38,12 +38,14 @@ export function parsePlanRows(rows: string[][]): PlanDay[] {
 
     const notes = notesRaw?.trim();
     const videoUrl = videoUrlRaw?.trim();
+    const trimmedSets = setsRaw?.trim();
+    const trimmedReps = repsRaw?.trim();
 
     const planExercise: PlanExercise = {
       order: Number(orderRaw),
       exercise: trimmedExercise,
-      sets: Number(setsRaw),
-      reps: Number(repsRaw),
+      sets: trimmedSets ? Number(trimmedSets) : 1,
+      reps: trimmedReps ? Number(trimmedReps) : null,
       ...(notes ? { notes } : {}),
       ...(videoUrl ? { videoUrl } : {}),
     };
@@ -60,4 +62,21 @@ export function parsePlanRows(rows: string[][]): PlanDay[] {
     day,
     exercises: exercises.slice().sort((a, b) => a.order - b.order),
   }));
+}
+
+export function getPlanWarnings(rows: string[][]): string[] {
+  const warnings: string[] = [];
+
+  for (const row of rows) {
+    const [day, orderRaw, exercise] = row;
+    const trimmedDay = day?.trim();
+    const trimmedExercise = exercise?.trim();
+
+    if (trimmedDay && !trimmedExercise) {
+      const order = orderRaw?.trim() || "?";
+      warnings.push(`Skipped a row for ${trimmedDay} (order ${order}): missing exercise name.`);
+    }
+  }
+
+  return warnings;
 }

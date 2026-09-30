@@ -38,7 +38,7 @@ export const sessionExercises = pgTable("session_exercises", {
     .references(() => exercises.id),
   order: integer("order").notNull(),
   targetSets: integer("target_sets").notNull(),
-  targetReps: integer("target_reps").notNull(),
+  targetReps: integer("target_reps"),
 });
 
 export const sets = pgTable("sets", {

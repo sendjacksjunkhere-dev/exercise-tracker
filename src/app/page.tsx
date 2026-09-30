@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { after } from "next/server";
-import { getPlan } from "@/lib/plan";
+import { getPlan, getPlanWarningMessages } from "@/lib/plan";
 import { WEEKDAYS } from "@/lib/planParser";
 import { getUnfinishedSession } from "@/lib/session";
 import { retryUnsyncedSessions } from "@/lib/pushToSheet";
@@ -21,9 +21,11 @@ export default async function Home(props: PageProps<"/">) {
       : today;
 
   let plan;
+  let warnings: string[] = [];
   let error: string | null = null;
   try {
     plan = await getPlan();
+    warnings = await getPlanWarningMessages();
   } catch (err) {
     console.error("Failed to load plan:", err);
     error = "Couldn't load the plan from Google Sheets. Try again shortly.";
@@ -42,6 +44,16 @@ export default async function Home(props: PageProps<"/">) {
           History
         </Link>
       </div>
+
+      {warnings.length > 0 && (
+        <div className={`w-full max-w-md ${cardClass}`}>
+          {warnings.map((warning) => (
+            <p key={warning} className="text-sm text-amber-400">
+              {warning}
+            </p>
+          ))}
+        </div>
+      )}
 
       {unfinishedSession && (
         <div className="flex w-full max-w-md items-center justify-between gap-3 rounded-2xl bg-card-current p-4">
@@ -79,7 +91,7 @@ export default async function Home(props: PageProps<"/">) {
               <li key={exercise.order} className={cardClass}>
                 <p className="text-xl font-semibold text-text">{exercise.exercise}</p>
                 <p className="text-lg text-text-muted">
-                  {exercise.sets} × {exercise.reps}
+                  {exercise.sets} × {exercise.reps ?? "—"}
                 </p>
                 {exercise.notes && (
                   <p className="mt-1 text-sm text-text-muted">{exercise.notes}</p>
