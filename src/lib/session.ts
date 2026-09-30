@@ -1,8 +1,11 @@
-import { desc, eq, isNull, sql } from "drizzle-orm";
+import { desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { exercises, sessionExercises, sessions, sets } from "@/db/schema";
 import { getPlan } from "./plan";
 import { formatSydneyDate } from "./timezone";
+import { decideStartSession } from "./sessionDecision";
+
+export { decideStartSession, type StartSessionDecision } from "./sessionDecision";
 
 export function generateSessionId(date: Date, planDay: string): string {
   const dateStr = formatSydneyDate(date);
@@ -11,23 +14,31 @@ export function generateSessionId(date: Date, planDay: string): string {
   return `${dateStr}-${daySlug}-${suffix}`;
 }
 
-async function getOrCreateExercise(name: string): Promise<number> {
-  const existing = await db
-    .select({ id: exercises.id })
-    .from(exercises)
-    .where(sql`lower(${exercises.name}) = lower(${name})`)
-    .limit(1);
+async function resolveExerciseIds(names: string[]): Promise<Map<string, number>> {
+  const uniqueNames = [...new Set(names)];
+  const lowerNames = uniqueNames.map((name) => name.toLowerCase());
 
-  if (existing[0]) {
-    return existing[0].id;
+  const existing = await db
+    .select({ id: exercises.id, name: exercises.name })
+    .from(exercises)
+    .where(inArray(sql`lower(${exercises.name})`, lowerNames));
+
+  const idByLowerName = new Map(existing.map((row) => [row.name.toLowerCase(), row.id]));
+
+  const missingNames = uniqueNames.filter((name) => !idByLowerName.has(name.toLowerCase()));
+
+  if (missingNames.length > 0) {
+    const inserted = await db
+      .insert(exercises)
+      .values(missingNames.map((name) => ({ name })))
+      .returning({ id: exercises.id, name: exercises.name });
+
+    for (const row of inserted) {
+      idByLowerName.set(row.name.toLowerCase(), row.id);
+    }
   }
 
-  const inserted = await db
-    .insert(exercises)
-    .values({ name })
-    .returning({ id: exercises.id });
-
-  return inserted[0].id;
+  return idByLowerName;
 }
 
 export async function startSession(planDay: string): Promise<string> {
@@ -38,24 +49,35 @@ export async function startSession(planDay: string): Promise<string> {
     throw new Error(`No plan exercises for ${planDay}`);
   }
 
+  const existing = await getUnfinishedSession();
+  const decision = decideStartSession(existing);
+
+  if (decision === "blocked") {
+    throw new Error("An unfinished session with logged sets already exists");
+  }
+  if (decision === "discardAndCreate" && existing) {
+    await deleteSession(existing.id);
+  }
+
+  const idByLowerName = await resolveExerciseIds(day.exercises.map((e) => e.exercise));
   const sessionId = generateSessionId(new Date(), planDay);
 
-  await db.insert(sessions).values({
-    id: sessionId,
-    date: sessionId.slice(0, 10),
-    planDay,
-  });
-
-  for (const exercise of day.exercises) {
-    const exerciseId = await getOrCreateExercise(exercise.exercise);
-    await db.insert(sessionExercises).values({
-      sessionId,
-      exerciseId,
-      order: exercise.order,
-      targetSets: exercise.sets,
-      targetReps: exercise.reps,
-    });
-  }
+  await db.batch([
+    db.insert(sessions).values({
+      id: sessionId,
+      date: sessionId.slice(0, 10),
+      planDay,
+    }),
+    db.insert(sessionExercises).values(
+      day.exercises.map((exercise) => ({
+        sessionId,
+        exerciseId: idByLowerName.get(exercise.exercise.toLowerCase())!,
+        order: exercise.order,
+        targetSets: exercise.sets,
+        targetReps: exercise.reps,
+      }))
+    ),
+  ]);
 
   return sessionId;
 }
@@ -81,13 +103,26 @@ export async function getUnfinishedSession(): Promise<{
   id: string;
   planDay: string;
   startedAt: Date;
+  hasLoggedSets: boolean;
 } | null> {
   const [row] = await db
-    .select({ id: sessions.id, planDay: sessions.planDay, startedAt: sessions.startedAt })
+    .select({
+      id: sessions.id,
+      planDay: sessions.planDay,
+      startedAt: sessions.startedAt,
+      setCount: sql<number>`(select count(*) from sets where sets.session_id = sessions.id)::int`,
+    })
     .from(sessions)
     .where(isNull(sessions.finishedAt))
     .orderBy(desc(sessions.startedAt))
     .limit(1);
 
-  return row ?? null;
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    planDay: row.planDay,
+    startedAt: row.startedAt,
+    hasLoggedSets: row.setCount > 0,
+  };
 }

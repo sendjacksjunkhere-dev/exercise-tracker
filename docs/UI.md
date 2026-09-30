@@ -10,10 +10,14 @@ sweaty hands: large tap targets (min 44px), minimal typing, big numbers.
 
 1. **Login** – single password field. Exists (M0).
 2. **Today** – day picker (Mon–Sun, defaults to today's weekday) and that day's
-   exercises from the Plan. Exists (M1). M2 adds a "Start session" button. If an
-   unfinished session exists (started but not saved or discarded), a **Resume session**
-   banner appears at the top, above the day picker, regardless of which day is
-   selected — linking to that session, with a Discard option beside it.
+   exercises from the Plan. Exists (M1). M2 adds a "Start session" button. At most one
+   unfinished session can exist at a time. If one exists (started but not saved or
+   discarded), a **Resume session** banner appears at the top, above the day picker,
+   regardless of which day is selected — linking to that session, with a Discard option
+   beside it. Pressing "Start session" while an unfinished session exists: if it has no
+   sets logged, it's discarded silently and the new one starts; if it has logged sets,
+   Start session is replaced with a note pointing at the Resume banner above (which
+   already offers Resume or Discard — that's the choice, no second prompt).
 3. **Session** – the main screen. Specified in detail below.
 4. **History** – list of past sessions (date, plan day, sets done). Tapping one shows
    its sets grouped by exercise. Plain list is fine for v1.

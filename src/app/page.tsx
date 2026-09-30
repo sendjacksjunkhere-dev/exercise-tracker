@@ -101,7 +101,13 @@ export default async function Home(props: PageProps<"/">) {
           </ul>
         )}
 
-        {!error && planDay && (
+        {!error && planDay && unfinishedSession?.hasLoggedSets && (
+          <p className="mt-6 text-center text-sm text-text-muted">
+            Finish or discard your unfinished session above to start a new one.
+          </p>
+        )}
+
+        {!error && planDay && !unfinishedSession?.hasLoggedSets && (
           <form action={startSession} className="mt-6">
             <input type="hidden" name="day" value={selectedDay} />
             <StartSessionButton />
