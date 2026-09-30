@@ -29,6 +29,7 @@ type ExerciseVM = {
 };
 
 type Pending = { reps: number; weightKg: number };
+type ExerciseState = "done" | "current" | "started" | "empty";
 
 const DEFAULT_WEIGHT_KG = 20;
 
@@ -46,11 +47,46 @@ function computePending(exercise: ExerciseVM, setNumber: number): Pending {
   return { reps: exercise.targetReps, weightKg: DEFAULT_WEIGHT_KG };
 }
 
-function stateFor(exercise: ExerciseVM, currentExerciseId: number): "done" | "current" | "started" | "empty" {
+function stateFor(exercise: ExerciseVM, currentExerciseId: number): ExerciseState {
   if (exercise.loggedSets.length >= exercise.targetSets) return "done";
   if (exercise.exerciseId === currentExerciseId) return "current";
   if (exercise.loggedSets.length > 0) return "started";
   return "empty";
+}
+
+function StateIndicator({ state }: { state: ExerciseState }) {
+  if (state === "done") {
+    return (
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-done">
+        <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-bg stroke-2">
+          <path d="M3 8.5L6.5 12L13 4.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (state === "current") {
+    return (
+      <span className="h-8 w-8 shrink-0 rounded-full border-2 border-accent" aria-hidden />
+    );
+  }
+
+  if (state === "started") {
+    return <span className="h-8 w-8 shrink-0 rounded-full bg-accent" aria-hidden />;
+  }
+
+  return (
+    <span className="h-8 w-8 shrink-0 rounded-full border-2 border-border" aria-hidden />
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 fill-none stroke-text-muted stroke-2">
+      <circle cx="10" cy="10" r="7.5" />
+      <path d="M10 5.5V10L13 12" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 export function SessionScreen({
@@ -166,78 +202,82 @@ export function SessionScreen({
   }
 
   if (!currentExercise || !currentPending) {
-    return <div className="p-6">No exercises in this session.</div>;
+    return <div className="p-6 text-text">No exercises in this session.</div>;
   }
 
+  const nextSetNumber = currentExercise.loggedSets.length + 1;
+
   return (
-    <div className="flex h-dvh flex-col bg-zinc-50 dark:bg-black">
-      <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+    <div className="flex h-dvh flex-col gap-4 bg-bg px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <header className="flex items-center justify-between pt-2">
         <div>
-          <p className="text-lg font-semibold text-black dark:text-zinc-50">{planDay} session</p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            {exerciseList.length} exercises
-          </p>
+          <p className="text-xl font-semibold text-text">{planDay} session</p>
+          <p className="text-sm text-text-muted">{exerciseList.length} exercises</p>
         </div>
         <Link
           href={`/session/${sessionId}/finish`}
-          className="flex h-11 items-center justify-center rounded-lg bg-black px-4 font-medium text-white dark:bg-white dark:text-black"
+          className="flex h-11 items-center justify-center rounded-xl border border-border px-4 font-medium text-text"
         >
           Finish
         </Link>
       </header>
 
-      <section className="border-b border-zinc-200 p-4 dark:border-zinc-800">
+      <section className="rounded-2xl bg-card p-5">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-2xl font-semibold text-black dark:text-zinc-50">
-              {currentExercise.exerciseName}
-            </p>
-            <p className="text-zinc-600 dark:text-zinc-400">
-              Set {currentExercise.loggedSets.length + 1} of {currentExercise.targetSets}
+            <p className="text-3xl font-bold text-text">{currentExercise.exerciseName}</p>
+            <p className="text-text-muted">
+              Set {nextSetNumber} of {currentExercise.targetSets}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleSetsStepper(currentExercise, -1)}
-              className="h-11 w-11 rounded-lg bg-zinc-200 text-xl dark:bg-zinc-800 dark:text-zinc-50"
-            >
-              −
-            </button>
-            <span className="w-6 text-center text-zinc-600 dark:text-zinc-400">
-              {currentExercise.targetSets}
-            </span>
-            <button
-              type="button"
-              onClick={() => handleSetsStepper(currentExercise, 1)}
-              className="h-11 w-11 rounded-lg bg-zinc-200 text-xl dark:bg-zinc-800 dark:text-zinc-50"
-            >
-              +
-            </button>
+          <div>
+            <p className="text-center text-sm text-text-muted">Sets</p>
+            <div className="mt-1 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleSetsStepper(currentExercise, -1)}
+                className="h-10 w-10 rounded-xl bg-control text-xl text-text"
+              >
+                −
+              </button>
+              <span className="w-6 text-center text-lg text-text">
+                {currentExercise.targetSets}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleSetsStepper(currentExercise, 1)}
+                className="h-10 w-10 rounded-xl bg-control text-xl text-text"
+              >
+                +
+              </button>
+            </div>
           </div>
         </div>
 
         {currentExercise.lastTime && (
-          <div className="mt-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+          <div className="mt-3 rounded-xl bg-control px-4 py-3">
+            <p className="flex items-center gap-2 text-sm text-text-muted">
+              <ClockIcon />
               Last time · {formatShortDate(currentExercise.lastTime.date)}
             </p>
-            {currentExercise.lastTime.sets.map((set) => (
-              <p key={set.setNumber} className="text-sm text-zinc-500 dark:text-zinc-400">
-                Set {set.setNumber} · {set.weightKg} kg × {set.reps}
-              </p>
-            ))}
+            <div className="mt-1 flex flex-col">
+              {currentExercise.lastTime.sets.map((set) => (
+                <p key={set.setNumber} className="text-sm text-text">
+                  Set {set.setNumber} · {set.weightKg} kg × {set.reps}
+                </p>
+              ))}
+            </div>
           </div>
         )}
 
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">Weight (kg)</p>
+            <p className="text-center text-sm text-text-muted">Weight (kg)</p>
             <div className="mt-1 flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => adjustPending(currentExercise.exerciseId, "weightKg", -2.5)}
-                className="h-11 w-11 rounded-lg bg-zinc-200 text-xl dark:bg-zinc-800 dark:text-zinc-50"
+                className="h-11 w-11 shrink-0 rounded-xl bg-control text-xl text-text"
               >
                 −
               </button>
@@ -248,12 +288,12 @@ export function SessionScreen({
                 onChange={(e) =>
                   setPendingField(currentExercise.exerciseId, "weightKg", Number(e.target.value))
                 }
-                className="w-16 rounded-lg border border-zinc-300 bg-white text-center text-2xl font-semibold text-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                className="w-full min-w-0 bg-transparent text-center text-4xl font-bold text-text"
               />
               <button
                 type="button"
                 onClick={() => adjustPending(currentExercise.exerciseId, "weightKg", 2.5)}
-                className="h-11 w-11 rounded-lg bg-zinc-200 text-xl dark:bg-zinc-800 dark:text-zinc-50"
+                className="h-11 w-11 shrink-0 rounded-xl bg-control text-xl text-text"
               >
                 +
               </button>
@@ -261,12 +301,12 @@ export function SessionScreen({
           </div>
 
           <div>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">Reps</p>
+            <p className="text-center text-sm text-text-muted">Reps</p>
             <div className="mt-1 flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => adjustPending(currentExercise.exerciseId, "reps", -1)}
-                className="h-11 w-11 rounded-lg bg-zinc-200 text-xl dark:bg-zinc-800 dark:text-zinc-50"
+                className="h-11 w-11 shrink-0 rounded-xl bg-control text-xl text-text"
               >
                 −
               </button>
@@ -277,12 +317,12 @@ export function SessionScreen({
                 onChange={(e) =>
                   setPendingField(currentExercise.exerciseId, "reps", Number(e.target.value))
                 }
-                className="w-16 rounded-lg border border-zinc-300 bg-white text-center text-2xl font-semibold text-black dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                className="w-full min-w-0 bg-transparent text-center text-4xl font-bold text-text"
               />
               <button
                 type="button"
                 onClick={() => adjustPending(currentExercise.exerciseId, "reps", 1)}
-                className="h-11 w-11 rounded-lg bg-zinc-200 text-xl dark:bg-zinc-800 dark:text-zinc-50"
+                className="h-11 w-11 shrink-0 rounded-xl bg-control text-xl text-text"
               >
                 +
               </button>
@@ -294,7 +334,7 @@ export function SessionScreen({
           type="button"
           onClick={() => handleLogSet(currentExercise)}
           disabled={currentExercise.loggedSets.length >= currentExercise.targetSets || isPending}
-          className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-black text-lg font-medium text-white disabled:opacity-40 dark:bg-white dark:text-black"
+          className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-accent text-lg font-semibold text-text disabled:opacity-40"
         >
           {isPending && (
             <span
@@ -302,16 +342,16 @@ export function SessionScreen({
               className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
             />
           )}
-          {isPending ? "Logging…" : "Log set"}
+          {isPending ? "Logging…" : `Log set ${nextSetNumber}`}
         </button>
 
         {currentExercise.loggedSets.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-col gap-2">
             {currentExercise.loggedSets.map((set) =>
               editingSetId === set.id ? (
                 <div
                   key={set.id}
-                  className="flex items-center gap-2 rounded-full bg-zinc-200 px-3 py-1 dark:bg-zinc-800"
+                  className="flex items-center gap-2 rounded-xl bg-control px-3 py-2"
                 >
                   <input
                     type="number"
@@ -320,34 +360,34 @@ export function SessionScreen({
                     onChange={(e) =>
                       setEditValues((v) => ({ ...v, weightKg: Number(e.target.value) }))
                     }
-                    className="w-14 rounded bg-white text-center dark:bg-zinc-900"
+                    className="w-14 rounded bg-bg text-center text-base text-text"
                   />
-                  <span>×</span>
+                  <span className="text-text-muted">×</span>
                   <input
                     type="number"
                     inputMode="numeric"
                     value={editValues.reps}
                     onChange={(e) => setEditValues((v) => ({ ...v, reps: Number(e.target.value) }))}
-                    className="w-14 rounded bg-white text-center dark:bg-zinc-900"
+                    className="w-14 rounded bg-bg text-center text-base text-text"
                   />
                   <button
                     type="button"
                     onClick={() => handleSaveEdit(currentExercise.exerciseId, set.id)}
-                    className="font-medium text-green-700 dark:text-green-400"
+                    className="font-medium text-done"
                   >
                     Save
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDeleteSet(currentExercise.exerciseId, set.id)}
-                    className="font-medium text-red-700 dark:text-red-400"
+                    className="font-medium text-red-400"
                   >
                     Delete
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditingSetId(null)}
-                    className="text-zinc-500 dark:text-zinc-400"
+                    className="text-text-muted"
                   >
                     Cancel
                   </button>
@@ -357,8 +397,11 @@ export function SessionScreen({
                   key={set.id}
                   type="button"
                   onClick={() => startEditingSet(set)}
-                  className="rounded-full bg-zinc-200 px-3 py-1 text-sm dark:bg-zinc-800"
+                  className="flex items-center gap-2 text-left text-text"
                 >
+                  <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 fill-none stroke-done stroke-2">
+                    <path d="M3 8.5L6.5 12L13 4.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                   Set {set.setNumber} · {set.weightKg} × {set.reps}
                 </button>
               )
@@ -367,51 +410,53 @@ export function SessionScreen({
         )}
       </section>
 
-      <div className="flex items-center gap-3 border-b border-zinc-200 px-4 py-1 dark:border-zinc-800">
-        <span className="w-4" aria-hidden />
-        <span className="flex-1" />
-        <span className="text-xs text-zinc-400 dark:text-zinc-500">Sets</span>
-        <span className="w-10 text-right text-xs text-zinc-400 dark:text-zinc-500">Reps</span>
-        <span className="w-16 text-right text-xs text-zinc-400 dark:text-zinc-500">Kg</span>
-      </div>
+      <div className="flex flex-1 flex-col overflow-hidden rounded-2xl bg-card">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="w-8" aria-hidden />
+          <span className="flex-1 text-sm text-text-muted">Today</span>
+          <span className="w-12 text-right text-sm text-text-muted">Sets</span>
+          <span className="w-10 text-right text-sm text-text-muted">Reps</span>
+          <span className="w-14 text-right text-sm text-text-muted">Kg</span>
+        </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <ul>
+        <ul className="flex-1 overflow-y-auto">
           {exerciseList.map((exercise) => {
             const state = stateFor(exercise, currentExerciseId);
             const lastSet = exercise.loggedSets[exercise.loggedSets.length - 1];
             const repsDisplay = lastSet ? lastSet.reps : exercise.targetReps;
             const weightDisplay = lastSet
-              ? `${lastSet.weightKg} kg`
+              ? lastSet.weightKg
               : exercise.lastTime
-                ? `${exercise.lastTime.sets[0].weightKg} kg`
+                ? exercise.lastTime.sets[0].weightKg
                 : "—";
+            const isCurrent = state === "current";
 
             return (
               <li key={exercise.sessionExerciseId}>
                 <button
                   type="button"
                   onClick={() => setCurrentExerciseId(exercise.exerciseId)}
-                  className={`flex w-full items-center gap-3 border-b border-zinc-200 px-4 py-3 text-left dark:border-zinc-800 ${
-                    state === "current" ? "bg-zinc-200 dark:bg-zinc-800" : ""
+                  className={`flex w-full items-center gap-3 border-t border-border px-4 py-3 text-left first:border-t-0 ${
+                    isCurrent ? "bg-card-current" : ""
                   }`}
                 >
-                  <span aria-hidden>
-                    {state === "done" && "✓"}
-                    {state === "current" && "◎"}
-                    {state === "started" && "●"}
-                    {state === "empty" && "○"}
-                  </span>
-                  <span className="flex-1 text-black dark:text-zinc-50">
+                  <StateIndicator state={state} />
+                  <span className="flex-1 text-base font-medium text-text">
                     {exercise.exerciseName}
                   </span>
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                  <span
+                    className={`w-12 text-right text-base ${isCurrent ? "text-accent" : "text-text-muted"}`}
+                  >
                     {exercise.loggedSets.length}/{exercise.targetSets}
                   </span>
-                  <span className="w-10 text-right text-sm text-zinc-500 dark:text-zinc-400">
+                  <span
+                    className={`w-10 text-right text-base ${isCurrent ? "text-accent" : "text-text-muted"}`}
+                  >
                     {repsDisplay}
                   </span>
-                  <span className="w-16 text-right text-sm text-zinc-500 dark:text-zinc-400">
+                  <span
+                    className={`w-14 text-right text-base ${isCurrent ? "text-accent" : "text-text-muted"}`}
+                  >
                     {weightDisplay}
                   </span>
                 </button>
@@ -421,13 +466,16 @@ export function SessionScreen({
         </ul>
       </div>
 
-      <footer className="border-t border-zinc-200 p-4 dark:border-zinc-800">
-        <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-          <div className="h-full bg-black dark:bg-white" style={{ width: `${progressPct}%` }} />
+      <footer className="pb-1">
+        <div className="flex items-center justify-between text-sm text-text-muted">
+          <span>
+            {totalLogged} of {totalTarget} sets
+          </span>
+          <span>{progressPct}%</span>
         </div>
-        <p className="mt-2 text-center text-sm text-zinc-600 dark:text-zinc-400">
-          {totalLogged} of {totalTarget} sets · {progressPct}%
-        </p>
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-control">
+          <div className="h-full rounded-full bg-accent" style={{ width: `${progressPct}%` }} />
+        </div>
       </footer>
     </div>
   );
