@@ -53,8 +53,10 @@ Fixed vertical layout. Only the exercise list scrolls; everything else stays put
 - **Last time** heading: short date ("Tue 29 Sep") of the most recent session containing
   this exercise, with one line per set beneath it ("Set 1 · 20 kg × 8"). From the app
   DB. Hidden if none.
-- **Weight stepper**: −/+ in 2.5 kg steps. Tapping the number opens a numeric keypad
-  for direct entry. Minimum 0.
+- **Weight stepper**: −/+ in 0.5 kg steps. Press-and-hold either button repeats the
+  step (after an initial short delay), accelerating to a faster repeat rate after
+  about a second, so large changes don't take many taps. Tapping the number opens a
+  numeric keypad for direct entry. Minimum 0.
 - **Reps stepper**: −/+ in steps of 1. Tapping the number opens a numeric keypad.
 - **Log set** button, full width, primary. Saves the set to the DB and advances N.
 - **Logged sets** row: chips "Set 1 · 62.5 × 8" for sets already done. Tapping a chip

@@ -1,6 +1,13 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type MouseEvent,
+  type PointerEvent,
+} from "react";
 import Link from "next/link";
 import { formatShortDate, type LastTime } from "@/lib/lastTime";
 import { computePending, type Pending } from "@/lib/pendingPrefill";
@@ -37,6 +44,57 @@ const LONG_NAME_THRESHOLD = 16;
 
 function exerciseTitleClass(name: string): string {
   return name.length > LONG_NAME_THRESHOLD ? "text-xl" : "text-3xl";
+}
+
+const HOLD_INITIAL_DELAY_MS = 400;
+const HOLD_NORMAL_INTERVAL_MS = 150;
+const HOLD_ACCELERATE_AFTER_MS = 1000;
+const HOLD_FAST_INTERVAL_MS = 50;
+
+function useHoldRepeat(onStep: () => void) {
+  const onStepRef = useRef(onStep);
+  useEffect(() => {
+    onStepRef.current = onStep;
+  });
+
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const accelerateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearTimers() {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (accelerateRef.current) clearTimeout(accelerateRef.current);
+    timeoutRef.current = null;
+    intervalRef.current = null;
+    accelerateRef.current = null;
+  }
+
+  useEffect(() => clearTimers, []);
+
+  function start() {
+    onStepRef.current();
+    timeoutRef.current = setTimeout(() => {
+      intervalRef.current = setInterval(() => onStepRef.current(), HOLD_NORMAL_INTERVAL_MS);
+      accelerateRef.current = setTimeout(() => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = setInterval(() => onStepRef.current(), HOLD_FAST_INTERVAL_MS);
+      }, HOLD_ACCELERATE_AFTER_MS);
+    }, HOLD_INITIAL_DELAY_MS);
+  }
+
+  return {
+    onPointerDown: (e: PointerEvent) => {
+      e.preventDefault();
+      start();
+    },
+    onPointerUp: clearTimers,
+    onPointerLeave: clearTimers,
+    onPointerCancel: clearTimers,
+    onClick: (e: MouseEvent) => {
+      if (e.detail === 0) onStepRef.current();
+    },
+  };
 }
 
 function stateFor(exercise: ExerciseVM, currentExerciseId: number): ExerciseState {
@@ -113,6 +171,13 @@ export function SessionScreen({
   const totalTarget = exerciseList.reduce((sum, e) => sum + e.targetSets, 0);
   const totalLogged = exerciseList.reduce((sum, e) => sum + e.loggedSets.length, 0);
   const progressPct = totalTarget > 0 ? Math.round((totalLogged / totalTarget) * 100) : 0;
+
+  const decrementWeightHold = useHoldRepeat(() => {
+    if (currentExercise) adjustPending(currentExercise.exerciseId, "weightKg", -0.5);
+  });
+  const incrementWeightHold = useHoldRepeat(() => {
+    if (currentExercise) adjustPending(currentExercise.exerciseId, "weightKg", 0.5);
+  });
 
   function updateExercise(exerciseId: number, updater: (e: ExerciseVM) => ExerciseVM) {
     setExerciseList((list) => list.map((e) => (e.exerciseId === exerciseId ? updater(e) : e)));
@@ -269,7 +334,7 @@ export function SessionScreen({
             <div className="mt-1 flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => adjustPending(currentExercise.exerciseId, "weightKg", -2.5)}
+                {...decrementWeightHold}
                 className="h-11 w-11 shrink-0 rounded-xl bg-control text-xl text-text"
               >
                 −
@@ -285,7 +350,7 @@ export function SessionScreen({
               />
               <button
                 type="button"
-                onClick={() => adjustPending(currentExercise.exerciseId, "weightKg", 2.5)}
+                {...incrementWeightHold}
                 className="h-11 w-11 shrink-0 rounded-xl bg-control text-xl text-text"
               >
                 +
