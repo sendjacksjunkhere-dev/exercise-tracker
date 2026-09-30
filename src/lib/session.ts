@@ -75,6 +75,7 @@ export async function startSession(planDay: string): Promise<string> {
         order: exercise.order,
         targetSets: exercise.sets,
         targetReps: exercise.reps,
+        targetWeightKg: exercise.weightKg,
       }))
     ),
   ]);

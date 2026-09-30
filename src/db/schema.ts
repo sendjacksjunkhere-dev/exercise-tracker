@@ -39,6 +39,7 @@ export const sessionExercises = pgTable("session_exercises", {
   order: integer("order").notNull(),
   targetSets: integer("target_sets").notNull(),
   targetReps: integer("target_reps"),
+  targetWeightKg: real("target_weight_kg"),
 });
 
 export const sets = pgTable("sets", {

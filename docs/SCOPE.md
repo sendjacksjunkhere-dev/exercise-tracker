@@ -47,11 +47,15 @@ Single user. Practice project built with Claude Code. Place this file at `docs/S
 
 Tab names are exact; the app finds them by name. Template: `exercise-tracker-sheet-template.xlsx`.
 
-**Plan** (I edit; one row per exercise)
+**Plan** (I edit; one row per exercise). Columns are matched by header name, not
+position, so inserting or reordering columns is safe.
 
-| Day | Order | Exercise | Sets | Reps | Notes | Video URL |
-|-----|-------|----------|------|------|-------|-----------|
-| Monday | 1 | Bench press | 3 | 8 | Pause at chest | |
+| Day | Order | Exercise | Sets | Reps | Weight (kg) | Notes | Video URL |
+|-----|-------|----------|------|------|-------------|-------|-----------|
+| Monday | 1 | Bench press | 3 | 8 | 60 | Pause at chest | |
+
+`Weight (kg)` is optional (the column itself, and each cell) — blank means no target
+weight for that exercise.
 
 **Log** (app appends; one row per set; weights in kg; dates/times in Australia/Sydney time;
 Start time and Duration are per-session and repeat on every row of that session's block)

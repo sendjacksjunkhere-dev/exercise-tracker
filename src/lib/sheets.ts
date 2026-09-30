@@ -21,9 +21,8 @@ export async function fetchPlanRows(): Promise<string[][]> {
 
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: "Plan!A:G",
+    range: "Plan",
   });
 
-  const rows = response.data.values ?? [];
-  return rows.slice(1) as string[][];
+  return (response.data.values ?? []) as string[][];
 }

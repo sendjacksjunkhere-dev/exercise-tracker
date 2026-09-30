@@ -29,6 +29,7 @@ export default async function SessionPage(props: PageProps<"/session/[id]">) {
       order: sessionExercises.order,
       targetSets: sessionExercises.targetSets,
       targetReps: sessionExercises.targetReps,
+      targetWeightKg: sessionExercises.targetWeightKg,
       exerciseName: exercises.name,
     })
     .from(sessionExercises)

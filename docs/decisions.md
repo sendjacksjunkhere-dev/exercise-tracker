@@ -2,6 +2,21 @@
 
 Changes to `docs/SCOPE.md` after the fact, with why.
 
+## 2026-09-30 — Plan parsed by column header, not position; optional Weight (kg) column
+
+`planParser.ts` now reads a Plan row's fields by matching the sheet's header row
+(`"Day"`, `"Sets"`, `"Weight (kg)"`, etc.) instead of hardcoded column positions. The
+Plan tab also gains an optional `Weight (kg)` column: blank means no target weight for
+that exercise. Session start snapshots it into `session_exercises.target_weight_kg`
+(same treatment as `target_reps`/`target_sets`). It feeds three places: Today's plan
+cards ("3 × 8 @ 60 kg"), the session list's Kg column (last time's weight → Plan target
+weight → dash), and the weight-stepper prefill (last time's set N → previous set this
+session → Plan target weight → 20 kg).
+
+Why: positional parsing meant inserting a column anywhere but the end would silently
+shift every field after it. Reading by name makes the Plan tab's column order and any
+future additions safe to change without breaking the parser.
+
 ## 2026-09-30 — Log tab gains Start time and Duration columns
 
 Added `Start time` and `Duration (min)` to the `Log` tab layout (between `Day` and

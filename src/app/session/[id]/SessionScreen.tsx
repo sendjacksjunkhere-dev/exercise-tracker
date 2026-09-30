@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { formatShortDate, type LastTime } from "@/lib/lastTime";
+import { computePending, type Pending } from "@/lib/pendingPrefill";
 import { buttonClass, cardClass } from "@/lib/ui";
 import {
   deleteSetAction,
@@ -25,28 +26,12 @@ type ExerciseVM = {
   exerciseName: string;
   targetSets: number;
   targetReps: number | null;
+  targetWeightKg: number | null;
   loggedSets: LoggedSet[];
   lastTime: LastTime | null;
 };
 
-type Pending = { reps: number; weightKg: number };
 type ExerciseState = "done" | "current" | "started" | "empty";
-
-const DEFAULT_WEIGHT_KG = 20;
-
-function computePending(exercise: ExerciseVM, setNumber: number): Pending {
-  const lastTimeSet = exercise.lastTime?.sets.find((s) => s.setNumber === setNumber);
-  if (lastTimeSet) {
-    return { reps: lastTimeSet.reps, weightKg: lastTimeSet.weightKg };
-  }
-
-  const previousSetThisSession = exercise.loggedSets.find((s) => s.setNumber === setNumber - 1);
-  if (previousSetThisSession) {
-    return { reps: previousSetThisSession.reps, weightKg: previousSetThisSession.weightKg };
-  }
-
-  return { reps: exercise.targetReps ?? 0, weightKg: DEFAULT_WEIGHT_KG };
-}
 
 const LONG_NAME_THRESHOLD = 16;
 
@@ -436,7 +421,7 @@ export function SessionScreen({
               ? lastSet.weightKg
               : exercise.lastTime
                 ? exercise.lastTime.sets[0].weightKg
-                : "—";
+                : (exercise.targetWeightKg ?? "—");
             const isCurrent = state === "current";
 
             return (

@@ -92,6 +92,7 @@ export default async function Home(props: PageProps<"/">) {
                 <p className="text-xl font-semibold text-text">{exercise.exercise}</p>
                 <p className="text-lg text-text-muted">
                   {exercise.sets} × {exercise.reps ?? "—"}
+                  {exercise.weightKg != null ? ` @ ${exercise.weightKg} kg` : ""}
                 </p>
                 {exercise.notes && (
                   <p className="mt-1 text-sm text-text-muted">{exercise.notes}</p>
