@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { formatLastTime, formatShortDate, pickLastTime, type LastTimeSetRow } from "./lastTime";
+import {
+  formatLastTime,
+  formatLastTimeCompact,
+  formatShortDate,
+  pickLastTime,
+  type LastTimeSetRow,
+} from "./lastTime";
 
 function row(overrides: Partial<LastTimeSetRow>): LastTimeSetRow {
   return {
@@ -81,6 +87,43 @@ describe("formatLastTime", () => {
       ],
     });
     expect(result).toBe("60 kg × 8, 62.5 kg × 7");
+  });
+});
+
+describe("formatLastTimeCompact", () => {
+  it("joins weights with a shared reps count when reps match across sets", () => {
+    const result = formatLastTimeCompact({
+      date: "2026-09-22",
+      sets: [
+        { setNumber: 1, reps: 6, weightKg: 20 },
+        { setNumber: 2, reps: 6, weightKg: 22.5 },
+        { setNumber: 3, reps: 6, weightKg: 25 },
+        { setNumber: 4, reps: 6, weightKg: 27.5 },
+      ],
+    });
+    expect(result).toBe("20 · 22.5 · 25 · 27.5 kg × 6");
+  });
+
+  it("formats a single shared weight with a reps list when weights match", () => {
+    const result = formatLastTimeCompact({
+      date: "2026-09-22",
+      sets: [
+        { setNumber: 1, reps: 8, weightKg: 60 },
+        { setNumber: 2, reps: 7, weightKg: 60 },
+      ],
+    });
+    expect(result).toBe("60 kg × 8, 7");
+  });
+
+  it("falls back to per-set pairs when both weight and reps vary", () => {
+    const result = formatLastTimeCompact({
+      date: "2026-09-22",
+      sets: [
+        { setNumber: 1, reps: 8, weightKg: 60 },
+        { setNumber: 2, reps: 6, weightKg: 62.5 },
+      ],
+    });
+    expect(result).toBe("60×8 · 62.5×6");
   });
 });
 

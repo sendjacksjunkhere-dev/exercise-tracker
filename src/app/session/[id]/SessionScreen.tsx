@@ -5,12 +5,15 @@ import {
   useRef,
   useState,
   useTransition,
+  type FocusEvent,
   type MouseEvent,
   type PointerEvent,
 } from "react";
 import Link from "next/link";
-import { formatShortDate, type LastTime } from "@/lib/lastTime";
+import { formatLastTimeCompact, formatShortDate, type LastTime } from "@/lib/lastTime";
+import { stripLeadingZeros } from "@/lib/numberInput";
 import { computePending, type Pending } from "@/lib/pendingPrefill";
+import { nextTargetSets } from "@/lib/targetSets";
 import { buttonClass, cardClass } from "@/lib/ui";
 import {
   deleteSetAction,
@@ -41,6 +44,7 @@ type ExerciseVM = {
 type ExerciseState = "done" | "current" | "started" | "empty";
 
 const LONG_NAME_THRESHOLD = 16;
+const LAST_TIME_COLLAPSE_THRESHOLD = 6;
 
 function exerciseTitleClass(name: string): string {
   return name.length > LONG_NAME_THRESHOLD ? "text-xl" : "text-3xl";
@@ -164,6 +168,12 @@ export function SessionScreen({
   const [editValues, setEditValues] = useState<Pending>({ reps: 0, weightKg: 0 });
   const [isPending, startTransition] = useTransition();
   const logSetGuardRef = useRef(false);
+  const [lastTimeExpanded, setLastTimeExpanded] = useState(false);
+  const [lastTimeExpandedForId, setLastTimeExpandedForId] = useState(currentExerciseId);
+  if (currentExerciseId !== lastTimeExpandedForId) {
+    setLastTimeExpandedForId(currentExerciseId);
+    setLastTimeExpanded(false);
+  }
 
   const currentExercise = exerciseList.find((e) => e.exerciseId === currentExerciseId);
   const currentPending = currentExercise ? pendingByExercise[currentExercise.exerciseId] : undefined;
@@ -198,6 +208,18 @@ export function SessionScreen({
     }));
   }
 
+  function handlePendingInputChange(exerciseId: number, field: keyof Pending, raw: string) {
+    setPendingField(exerciseId, field, Number(stripLeadingZeros(raw)));
+  }
+
+  function handleEditValueChange(field: keyof Pending, raw: string) {
+    setEditValues((v) => ({ ...v, [field]: Number(stripLeadingZeros(raw)) }));
+  }
+
+  function selectInputOnFocus(e: FocusEvent<HTMLInputElement>) {
+    e.currentTarget.select();
+  }
+
   function handleLogSet(exercise: ExerciseVM) {
     if (logSetGuardRef.current) return;
     logSetGuardRef.current = true;
@@ -207,7 +229,16 @@ export function SessionScreen({
       try {
         const newSet = await logSetAction(sessionId, exercise.exerciseId, pending.reps, pending.weightKg);
         const updatedLoggedSets = [...exercise.loggedSets, newSet];
-        updateExercise(exercise.exerciseId, (e) => ({ ...e, loggedSets: updatedLoggedSets }));
+        const updatedTargetSets = nextTargetSets(exercise.targetSets, updatedLoggedSets.length);
+        updateExercise(exercise.exerciseId, (e) => ({
+          ...e,
+          loggedSets: updatedLoggedSets,
+          targetSets: updatedTargetSets,
+        }));
+
+        if (updatedTargetSets !== exercise.targetSets) {
+          void updateTargetSetsAction(exercise.sessionExerciseId, updatedTargetSets);
+        }
 
         const nextPending = computePending(
           { ...exercise, loggedSets: updatedLoggedSets },
@@ -263,9 +294,10 @@ export function SessionScreen({
   }
 
   const nextSetNumber = currentExercise.loggedSets.length + 1;
+  const displayedTargetSets = nextTargetSets(currentExercise.targetSets, nextSetNumber);
 
   return (
-    <div className="flex h-dvh flex-col gap-4 bg-bg px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <div className="flex h-dvh min-h-0 flex-col gap-4 overflow-hidden bg-bg px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <header className="flex items-center justify-between pt-2">
         <div>
           <p className="text-xl font-semibold text-text">{planDay} session</p>
@@ -285,7 +317,7 @@ export function SessionScreen({
               {currentExercise.exerciseName}
             </p>
             <p className="text-text-muted">
-              Set {nextSetNumber} of {currentExercise.targetSets}
+              Set {nextSetNumber} of {displayedTargetSets}
             </p>
           </div>
           <div>
@@ -318,13 +350,27 @@ export function SessionScreen({
               <ClockIcon />
               Last time · {formatShortDate(currentExercise.lastTime.date)}
             </p>
-            <div className="mt-1 flex flex-col">
-              {currentExercise.lastTime.sets.map((set) => (
-                <p key={set.setNumber} className="text-sm text-text">
-                  Set {set.setNumber} · {set.weightKg} kg × {set.reps}
-                </p>
-              ))}
-            </div>
+            <p className="mt-1 text-sm text-text">
+              {formatLastTimeCompact(currentExercise.lastTime)}
+            </p>
+            {currentExercise.lastTime.sets.length > LAST_TIME_COLLAPSE_THRESHOLD && (
+              <button
+                type="button"
+                onClick={() => setLastTimeExpanded((v) => !v)}
+                className="mt-1 text-sm font-medium text-accent"
+              >
+                {lastTimeExpanded ? "Show less" : "Show all"}
+              </button>
+            )}
+            {lastTimeExpanded && currentExercise.lastTime.sets.length > LAST_TIME_COLLAPSE_THRESHOLD && (
+              <div className="mt-1 flex flex-col">
+                {currentExercise.lastTime.sets.map((set) => (
+                  <p key={set.setNumber} className="text-sm text-text">
+                    Set {set.setNumber} · {set.weightKg} kg × {set.reps}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -343,8 +389,9 @@ export function SessionScreen({
                 type="number"
                 inputMode="decimal"
                 value={currentPending.weightKg}
+                onFocus={selectInputOnFocus}
                 onChange={(e) =>
-                  setPendingField(currentExercise.exerciseId, "weightKg", Number(e.target.value))
+                  handlePendingInputChange(currentExercise.exerciseId, "weightKg", e.target.value)
                 }
                 className="w-full min-w-0 bg-transparent text-center text-3xl font-bold tabular-nums text-text"
               />
@@ -372,8 +419,9 @@ export function SessionScreen({
                 type="number"
                 inputMode="numeric"
                 value={currentPending.reps}
+                onFocus={selectInputOnFocus}
                 onChange={(e) =>
-                  setPendingField(currentExercise.exerciseId, "reps", Number(e.target.value))
+                  handlePendingInputChange(currentExercise.exerciseId, "reps", e.target.value)
                 }
                 className="w-full min-w-0 bg-transparent text-center text-3xl font-bold tabular-nums text-text"
               />
@@ -391,7 +439,7 @@ export function SessionScreen({
         <button
           type="button"
           onClick={() => handleLogSet(currentExercise)}
-          disabled={currentExercise.loggedSets.length >= currentExercise.targetSets || isPending}
+          disabled={isPending}
           className={`mt-4 ${buttonClass("primary")}`}
         >
           {isPending && (
@@ -404,71 +452,77 @@ export function SessionScreen({
         </button>
 
         {currentExercise.loggedSets.length > 0 && (
-          <div className="mt-3 flex flex-col gap-2">
-            {currentExercise.loggedSets.map((set) =>
-              editingSetId === set.id ? (
-                <div
-                  key={set.id}
-                  className="flex items-center gap-2 rounded-xl bg-control px-3 py-2"
-                >
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    value={editValues.weightKg}
-                    onChange={(e) =>
-                      setEditValues((v) => ({ ...v, weightKg: Number(e.target.value) }))
-                    }
-                    className="w-14 rounded bg-bg text-center text-base text-text"
-                  />
-                  <span className="text-text-muted">×</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    value={editValues.reps}
-                    onChange={(e) => setEditValues((v) => ({ ...v, reps: Number(e.target.value) }))}
-                    className="w-14 rounded bg-bg text-center text-base text-text"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleSaveEdit(currentExercise.exerciseId, set.id)}
-                    className="font-medium text-done"
-                  >
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteSet(currentExercise.exerciseId, set.id)}
-                    className="font-medium text-red-400"
-                  >
-                    Delete
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingSetId(null)}
-                    className="text-text-muted"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
+          <div className="mt-3">
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {currentExercise.loggedSets.map((set) => (
                 <button
                   key={set.id}
                   type="button"
                   onClick={() => startEditingSet(set)}
-                  className="flex items-center gap-2 text-left text-text"
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-left text-sm whitespace-nowrap text-text ${
+                    editingSetId === set.id ? "bg-card-current" : "bg-control"
+                  }`}
                 >
-                  <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0 fill-none stroke-done stroke-2">
+                  <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0 fill-none stroke-done stroke-2">
                     <path d="M3 8.5L6.5 12L13 4.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   Set {set.setNumber} · {set.weightKg} × {set.reps}
                 </button>
-              )
-            )}
+              ))}
+            </div>
+
+            {editingSetId !== null &&
+              (() => {
+                const editingSet = currentExercise.loggedSets.find((s) => s.id === editingSetId);
+                if (!editingSet) return null;
+                return (
+                  <div className="mt-2 flex items-center gap-2 rounded-xl bg-control px-3 py-2">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={editValues.weightKg}
+                      onFocus={selectInputOnFocus}
+                      onChange={(e) => handleEditValueChange("weightKg", e.target.value)}
+                      className="w-14 rounded bg-bg text-center text-base text-text"
+                    />
+                    <span className="text-text-muted">×</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={editValues.reps}
+                      onFocus={selectInputOnFocus}
+                      onChange={(e) => handleEditValueChange("reps", e.target.value)}
+                      className="w-14 rounded bg-bg text-center text-base text-text"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleSaveEdit(currentExercise.exerciseId, editingSet.id)}
+                      className="font-medium text-done"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSet(currentExercise.exerciseId, editingSet.id)}
+                      className="font-medium text-red-400"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingSetId(null)}
+                      className="text-text-muted"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                );
+              })()}
           </div>
         )}
       </section>
 
-      <div className="flex flex-1 flex-col overflow-hidden rounded-2xl bg-card">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-card">
         <div className="flex items-center gap-3 px-4 py-3">
           <span className="w-8" aria-hidden />
           <span className="flex-1 text-sm text-text-muted">Today</span>
@@ -477,7 +531,7 @@ export function SessionScreen({
           <span className="w-14 text-right text-sm text-text-muted">Kg</span>
         </div>
 
-        <ul className="flex-1 overflow-y-auto">
+        <ul className="min-h-[10.5rem] flex-1 overflow-y-auto">
           {exerciseList.map((exercise) => {
             const state = stateFor(exercise, currentExerciseId);
             const lastSet = exercise.loggedSets[exercise.loggedSets.length - 1];

@@ -46,21 +46,34 @@ Fixed vertical layout. Only the exercise list scrolls; everything else stays put
   itself end the session.
 
 ### Current exercise card
-- Exercise name (large) and "Set N of T" where N = next set number, T = target sets
-  for this exercise in this session.
+The card is kept visually bounded (title capped at two lines, Last time collapsed
+to one line, logged sets a scrolling chip row) so it can't grow tall enough to push the
+exercise list below a usable size — see Exercise list below.
+
+- Exercise name (large, capped at two lines, overflow truncated) and "Set N of T" where
+  N = next set number, T = target sets for this exercise in this session. Logging a set
+  at or beyond T raises T to match immediately (before and after the log), so this line
+  never shows N greater than T.
 - **Sets stepper** (−/+) top-right, adjusts T for this session only. Never changes
   the Plan. Minimum = sets already logged. Progress bar total recalculates.
 - **Last time** heading: short date ("Tue 29 Sep") of the most recent session containing
-  this exercise, with one line per set beneath it ("Set 1 · 20 kg × 8"). From the app
-  DB. Hidden if none.
+  this exercise, from the app DB. Hidden if none. Below it, one compact line summarising
+  all sets, e.g. "20 · 22.5 · 25 · 27.5 kg × 6" when reps match across sets, or "60 kg ×
+  8, 7" when weight matches, falling back to per-set pairs ("60×8 · 62.5×6") when both
+  vary. If there are more than 6 sets, a "Show all" toggle expands it into the full
+  one-line-per-set list ("Set 1 · 20 kg × 8"); collapses again when switching exercise.
 - **Weight stepper**: −/+ in 0.5 kg steps. Press-and-hold either button repeats the
   step (after an initial short delay), accelerating to a faster repeat rate after
   about a second, so large changes don't take many taps. Tapping the number opens a
-  numeric keypad for direct entry. Minimum 0.
-- **Reps stepper**: −/+ in steps of 1. Tapping the number opens a numeric keypad.
+  numeric keypad for direct entry. Minimum 0. Focusing the field selects its full value
+  so typing replaces it, and leading zeros are stripped as you type (e.g. typing after
+  a "0" digit doesn't leave "05" on screen).
+- **Reps stepper**: −/+ in steps of 1. Tapping the number opens a numeric keypad, with
+  the same select-on-focus and leading-zero stripping as the weight field.
 - **Log set** button, full width, primary. Saves the set to the DB and advances N.
-- **Logged sets** row: chips "Set 1 · 62.5 × 8" for sets already done. Tapping a chip
-  allows edit or delete of that set.
+  Never disabled because the target was reached — only while a save is in flight.
+- **Logged sets** row: a horizontally scrolling row of chips "Set 1 · 62.5 × 8" for sets
+  already done. Tapping a chip opens an edit/delete panel below the row for that set.
 
 ### Stepper defaults and memory
 - For set N of an exercise: prefill from **last time's set N** if it exists, else the
@@ -71,6 +84,8 @@ Fixed vertical layout. Only the exercise list scrolls; everything else stays put
   each exercise's own next-set values.
 
 ### Exercise list
+- Always at least 3 rows tall, even when the current exercise card above is at its
+  tallest (e.g. Last time expanded), so there's always something to scroll.
 - Small grey column headers above the list: **Sets**, **Reps**, **Kg**.
 - One row per exercise in the plan day, in plan order. Columns: state indicator,
   name, sets done / target, reps, weight.

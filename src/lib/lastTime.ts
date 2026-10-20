@@ -68,3 +68,20 @@ export function formatLastTime(lastTime: LastTime): string {
 
   return lastTime.sets.map((set) => `${set.weightKg} kg × ${set.reps}`).join(", ");
 }
+
+export function formatLastTimeCompact(lastTime: LastTime): string {
+  const weights = lastTime.sets.map((set) => set.weightKg);
+  const reps = lastTime.sets.map((set) => set.reps);
+  const uniqueReps = new Set(reps);
+
+  if (uniqueReps.size === 1) {
+    return `${weights.join(" · ")} kg × ${reps[0]}`;
+  }
+
+  const uniqueWeights = new Set(weights);
+  if (uniqueWeights.size === 1) {
+    return `${weights[0]} kg × ${reps.join(", ")}`;
+  }
+
+  return lastTime.sets.map((set) => `${set.weightKg}×${set.reps}`).join(" · ");
+}
